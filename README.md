@@ -26,6 +26,11 @@ No hardcoded fields. Every section, every field, and every label is created, edi
 
 ## 🚀 Getting Started
 
+### Deployment URLs
+
+- Frontend: https://applybuddy-palash.vercel.app/
+- Backend API: https://apply-buddy.onrender.com
+
 ### 1. Run the Vault (Web App)
 
 The Vault is a modern React app powered by Vite.
