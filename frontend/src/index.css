@@ -81,7 +81,7 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  overflow-y: auto;
+  left: 0;
   z-index: 10;
 }
 
@@ -100,8 +100,37 @@ body {
 
 /* Sidebar Elements */
 .sidebar-top {
-  padding: 28px 24px;
+  padding: 24px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  min-height: 80px;
+}
+
+.sidebar-collapse-btn {
+  position: absolute;
+  right: -14px;
+  top: 26px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.sidebar-collapse-btn:hover {
+  background-color: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
 }
 
 .app-name {
@@ -117,6 +146,8 @@ body {
   padding: 0;
   margin: 16px 0 0;
   flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .nav-link {
@@ -1447,8 +1478,9 @@ html.theme-void .portfolio-btn:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 24px;
+  padding: 16px 24px;
   border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .sidebar-user-name {

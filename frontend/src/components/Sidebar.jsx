@@ -70,7 +70,6 @@ export default function Sidebar({
       initial={{ x: -30, opacity: 0 }}
       animate={{ x: 0, opacity: 1, width: isCollapsed ? 80 : 240 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      style={{ overflow: 'hidden' }}
     >
       <div className="sidebar-top">
         <motion.h1
@@ -130,7 +129,7 @@ export default function Sidebar({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              style={{ overflow: 'hidden' }}
+              style={{ overflow: 'hidden', marginBottom: '8px' }}
             >
               <motion.input
                 ref={inputRef}
