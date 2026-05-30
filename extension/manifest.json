@@ -16,7 +16,11 @@
     "service_worker": "background.js"
   },
   "action": {
+    "default_icon": "icon.svg",
     "default_title": "Open ApplyBuddy"
+  },
+  "icons": {
+    "128": "icon.svg"
   },
   "side_panel": {
     "default_path": "sidepanel.html"
