@@ -139,8 +139,7 @@ function App() {
     return null;
   }
 
-  // The actual protected Vault UI
-  const VaultUI = () => (
+  const vaultElement = (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Sidebar
         sections={data || []}
@@ -165,14 +164,6 @@ function App() {
         transition: 'margin-left 0.3s ease'
       }}>
         <div className="content-inner">
-          {hasUnsavedChanges && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-              <button className="btn-primary interactive" onClick={saveChanges}>
-                Save Changes
-              </button>
-            </div>
-          )}
-
           {data && data.length > 0 ? (
             <motion.div
               variants={{
@@ -213,6 +204,28 @@ function App() {
               <p>No sections yet. Add one from the sidebar.</p>
             </div>
           )}
+
+          {hasUnsavedChanges && (
+            <div
+              style={{
+                position: 'sticky',
+                bottom: '16px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                marginTop: '16px',
+                zIndex: 10,
+                pointerEvents: 'none'
+              }}
+            >
+              <button
+                className="btn-primary interactive"
+                onClick={saveChanges}
+                style={{ pointerEvents: 'auto', boxShadow: '0 10px 24px rgba(0, 0, 0, 0.22)' }}
+              >
+                Save Changes
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <Toast visible={toast.visible} error={toast.error} message={toast.message} />
@@ -235,7 +248,7 @@ function App() {
           <Route path="developers" element={<Developers />} />
         </Route>
         
-        <Route path="/vault" element={user ? <VaultUI /> : <Navigate to="/" replace />} />
+        <Route path="/vault" element={user ? vaultElement : <Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Cursor />
