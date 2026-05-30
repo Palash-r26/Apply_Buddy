@@ -1,6 +1,8 @@
-chrome.sidePanel
-  .setPanelBehavior({ openPanelOnAction: true })
-  .catch((error) => console.error(error));
+try {
+  chrome.sidePanel.setPanelBehavior({ openPanelOnAction: true }).catch(console.error);
+} catch (e) {
+  console.warn("sidePanel.setPanelBehavior not supported on this browser version:", e);
+}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'SYNC_APPLYBUDDY_DATA') {
