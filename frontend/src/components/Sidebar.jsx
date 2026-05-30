@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Sidebar({
   sections,
@@ -9,7 +10,9 @@ export default function Sidebar({
   onToggleTheme,
   theme,
   user,
-  onLogout
+  onLogout,
+  isCollapsed,
+  onToggleCollapse
 }) {
   const [showAddInput, setShowAddInput] = useState(false);
   const [sectionTitle, setSectionTitle] = useState('');
@@ -65,8 +68,9 @@ export default function Sidebar({
     <motion.div
       className="sidebar"
       initial={{ x: -30, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+      animate={{ x: 0, opacity: 1, width: isCollapsed ? 80 : 240 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      style={{ overflow: 'hidden' }}
     >
       <div className="sidebar-top">
         <motion.h1
@@ -74,6 +78,7 @@ export default function Sidebar({
           variants={containerVariants}
           initial="hidden"
           animate="visible"
+          style={{ display: isCollapsed ? 'none' : 'block' }}
         >
           {appNameChars.map((char, index) => (
             <motion.span key={index} style={{ display: 'inline-block' }} variants={charVariants}>
@@ -81,6 +86,13 @@ export default function Sidebar({
             </motion.span>
           ))}
         </motion.h1>
+        <button 
+          className="sidebar-collapse-btn interactive" 
+          onClick={onToggleCollapse}
+          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
       </div>
 
       <ul className="nav-links">
@@ -103,7 +115,7 @@ export default function Sidebar({
                     transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                   />
                 )}
-                {section.title}
+                {!isCollapsed && section.title}
               </a>
             </li>
           );
@@ -135,12 +147,14 @@ export default function Sidebar({
           )}
         </AnimatePresence>
 
-        <button
-          className="add-section-btn interactive"
-          onClick={() => setShowAddInput(prev => !prev)}
-        >
-          + Add Section
-        </button>
+        {!isCollapsed && (
+          <button
+            className="add-section-btn interactive"
+            onClick={() => setShowAddInput(prev => !prev)}
+          >
+            + Add Section
+          </button>
+        )}
 
         <button className="theme-toggle interactive" onClick={onToggleTheme}>
           <motion.div
@@ -150,15 +164,15 @@ export default function Sidebar({
           >
             ✦
           </motion.div>
-          <span>{theme === 'theme-void' ? 'VOID' : 'PAPER'}</span>
+          {!isCollapsed && <span>{theme === 'theme-void' ? 'VOID' : 'PAPER'}</span>}
         </button>
       </div>
 
       {user && (
         <div className="sidebar-user">
-          <span className="sidebar-user-name">✦ {user.username}</span>
-          <button className="sidebar-logout-btn interactive" onClick={onLogout}>
-            Logout
+          {!isCollapsed && <span className="sidebar-user-name">✦ {user.username}</span>}
+          <button className="sidebar-logout-btn interactive" onClick={onLogout} title="Logout">
+            {isCollapsed ? '✕' : 'Logout'}
           </button>
         </div>
       )}

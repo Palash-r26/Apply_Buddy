@@ -113,7 +113,7 @@ export function useProfile() {
 
   // Sync data to backend API
   const syncToBackend = useCallback((newData, retry = false) => {
-    return; // Temporarily disabled to bypass login
+    // If not authenticated, the request will fail with 401, but we still try
     // If not authenticated, the request will fail with 401, but we still try
     // App.jsx will handle redirecting unauthenticated users
     if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
@@ -166,7 +166,6 @@ export function useProfile() {
   // Load profile data from backend on mount
   const loadFromBackend = useCallback(async () => {
     setIsLoaded(true);
-    return; // Temporarily disabled to bypass login
     try {
       const res = await fetch('/api/profile'); // credentials are sent via cookies automatically by Vite proxy
 

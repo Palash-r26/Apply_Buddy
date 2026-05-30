@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useProfile } from './useProfile';
 import Sidebar from './components/Sidebar';
 import Toast from './components/Toast';
 import Cursor from './components/Cursor';
 import SectionBlock from './components/SectionBlock';
-import AuthScreen from './components/AuthScreen';
+import PublicLayout from './components/PublicLayout';
+import Landing from './components/Landing';
+import About from './components/About';
+import Developers from './components/Developers';
 
 function App() {
-  // Auth state
-  const [user, setUser] = useState({ id: 'local-guest', username: 'Guest' });
+  // Auth state - start null so we know we're checking
+  const [user, setUser] = useState(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   const {
@@ -26,33 +30,35 @@ function App() {
     loadFromBackend
   } = useProfile();
 
-  // Find first section to default to
   const initialActive = data && data.length > 0 ? data[0].id : '';
   const [activeSection, setActiveSection] = useState(initialActive);
   
-  // Theme state synced with document element class
   const [theme, setTheme] = useState(() => {
     return document.documentElement.className || 'theme-void';
   });
   
-  // Flash animation key triggered on theme toggle
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [flashKey, setFlashKey] = useState(0);
-
   const observerRef = useRef(null);
 
-  // Check auth session on mount
   useEffect(() => {
+    // Check if we have a saved user
+    const savedUser = localStorage.getItem('applybuddy_user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        setUser(null);
+      }
+    }
     setIsAuthChecking(false);
   }, []);
 
-  // Auth handler — called from AuthScreen on successful login/register
   const handleAuth = (newUser) => {
     setUser(newUser);
-    // Trigger a fresh load from the backend
     loadFromBackend();
   };
 
-  // Logout handler
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -64,7 +70,6 @@ function App() {
     setUser(null);
   };
 
-  // Smooth scroll click handler
   const handleLinkClick = (sectionId) => {
     const targetElement = document.getElementById(sectionId);
     if (targetElement) {
@@ -73,7 +78,6 @@ function App() {
     }
   };
 
-  // Toggle Theme helper
   const toggleTheme = () => {
     const currentTheme = document.documentElement.className;
     const nextTheme = currentTheme === 'theme-paper' ? 'theme-void' : 'theme-paper';
@@ -83,7 +87,6 @@ function App() {
     setFlashKey(prev => prev + 1);
   };
 
-  // Set up IntersectionObserver to update active navigation links on scroll
   useEffect(() => {
     if (observerRef.current) {
       observerRef.current.disconnect();
@@ -106,8 +109,11 @@ function App() {
       }
     );
 
+    // Only observe if we are on the vault page
     const sectionElements = document.querySelectorAll('.section-block');
-    sectionElements.forEach((el) => observerRef.current.observe(el));
+    if (sectionElements.length > 0) {
+      sectionElements.forEach((el) => observerRef.current.observe(el));
+    }
 
     return () => {
       if (observerRef.current) {
@@ -116,7 +122,6 @@ function App() {
     };
   }, [data]);
 
-  // Handle active item adjustment when data items are added or deleted
   useEffect(() => {
     if (data && data.length > 0 && !data.some(s => s.id === activeSection)) {
       setActiveSection(data[0].id);
@@ -124,85 +129,94 @@ function App() {
   }, [data, activeSection]);
 
   if (isAuthChecking) {
-    return null; // Or a subtle loading spinner
+    return null;
   }
 
-  // If not authenticated, show auth screen
-  if (!user) {
-    return (
-      <>
-        <AuthScreen onAuth={handleAuth} />
-        <Cursor />
-      </>
-    );
-  }
+  // The actual protected Vault UI
+  const VaultUI = () => (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <Sidebar
+        sections={data || []}
+        activeSection={activeSection}
+        onLinkClick={handleLinkClick}
+        onAddSection={addSection}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+        user={user}
+        onLogout={handleLogout}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
+      />
 
-  // Use robust Flexbox layout instead of CSS Grid to prevent blank screen issues
-  return (
-    <>
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-        <Sidebar
-          sections={data || []}
-          activeSection={activeSection}
-          onLinkClick={handleLinkClick}
-          onAddSection={addSection}
-          onToggleTheme={toggleTheme}
-          theme={theme}
-          user={user}
-          onLogout={handleLogout}
-        />
-
-        <div style={{ flex: 1, marginLeft: 240, height: '100vh', overflowY: 'auto', backgroundColor: 'var(--bg)' }}>
-          <div className="content-inner">
-            {data && data.length > 0 ? (
-              <motion.div
-                variants={{
-                  hidden: { opacity: 0 },
-                  visible: {
-                    opacity: 1,
-                    transition: {
-                      staggerChildren: 0.08
-                    }
-                  }
-                }}
-                initial="hidden"
-                animate="visible"
+      <div style={{ 
+        flex: 1, 
+        marginLeft: isSidebarCollapsed ? 80 : 240, 
+        height: '100vh', 
+        overflowY: 'auto', 
+        backgroundColor: 'var(--bg)',
+        transition: 'margin-left 0.3s ease'
+      }}>
+        <div className="content-inner">
+          {data && data.length > 0 ? (
+            <motion.div
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.08 }
+                }
+              }}
+              initial="hidden"
+              animate="visible"
+            >
+              <AnimatePresence>
+                {data.map((section) => (
+                  <SectionBlock
+                    key={section.id}
+                    section={section}
+                    onRename={renameSection}
+                    onDelete={deleteSection}
+                    onAddField={addField}
+                    onUpdateFieldMeta={updateFieldMeta}
+                    onUpdateFieldValue={updateFieldValue}
+                    onDeleteField={deleteField}
+                    flashKey={flashKey}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          ) : (
+            <div className="empty-state">
+              <motion.span
+                className="empty-plus"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
               >
-                <AnimatePresence>
-                  {data.map((section) => (
-                    <SectionBlock
-                      key={section.id}
-                      section={section}
-                      onRename={renameSection}
-                      onDelete={deleteSection}
-                      onAddField={addField}
-                      onUpdateFieldMeta={updateFieldMeta}
-                      onUpdateFieldValue={updateFieldValue}
-                      onDeleteField={deleteField}
-                      flashKey={flashKey}
-                    />
-                  ))}
-                </AnimatePresence>
-              </motion.div>
-            ) : (
-              <div className="empty-state">
-                <motion.span
-                  className="empty-plus"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                >
-                  ✦
-                </motion.span>
-                <p>No sections yet. Add one from the sidebar.</p>
-              </div>
-            )}
-          </div>
+                ✦
+              </motion.span>
+              <p>No sections yet. Add one from the sidebar.</p>
+            </div>
+          )}
         </div>
       </div>
-
       <Toast visible={toast.visible} error={toast.error} message={toast.message} />
+    </div>
+  );
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={user ? <Navigate to="/vault" replace /> : <PublicLayout theme={theme} onToggleTheme={toggleTheme} />}>
+          <Route index element={<Landing onAuth={handleAuth} />} />
+          <Route path="about" element={<About />} />
+          <Route path="developers" element={<Developers />} />
+        </Route>
+        
+        <Route path="/vault" element={user ? <VaultUI /> : <Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
       <Cursor />
-    </>
+    </BrowserRouter>
   );
 }
 

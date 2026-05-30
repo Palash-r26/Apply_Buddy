@@ -21,17 +21,17 @@ const setTokenCookie = (res, token) => {
 
 // Register User
 router.post('/register', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, email, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required' });
+  if (!username || !email || !password) {
+    return res.status(400).json({ error: 'Username, email, and password are required' });
   }
 
   try {
     // Check if user already exists
-    const userCheck = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    const userCheck = await pool.query('SELECT * FROM users WHERE username = $1 OR email = $2', [username, email]);
     if (userCheck.rows.length > 0) {
-      return res.status(400).json({ error: 'Username already exists' });
+      return res.status(400).json({ error: 'Username or email already exists' });
     }
 
     // Hash password with 12 salt rounds
@@ -39,8 +39,8 @@ router.post('/register', async (req, res) => {
 
     // Insert user and fetch returned id and username
     const newUser = await pool.query(
-      'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username',
-      [username, hashedPassword]
+      'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email',
+      [username, email, hashedPassword]
     );
 
     const user = newUser.rows[0];
@@ -62,25 +62,24 @@ router.post('/register', async (req, res) => {
 
 // Login User
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required' });
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
   }
 
   try {
-    // Check for user credentials
-    const userResult = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    // Check for user credentials by email
+    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userResult.rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid username or password' });
+      return res.status(400).json({ error: 'Invalid email or password' });
     }
 
     const user = userResult.rows[0];
 
-    // Compare bcrypt passwords
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
-      return res.status(400).json({ error: 'Invalid username or password' });
+      return res.status(400).json({ error: 'Invalid email or password' });
     }
 
     // Generate JWT token valid for 7 days
