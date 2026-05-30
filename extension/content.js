@@ -21,6 +21,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       "username": ["username", "user"]
     };
 
+    const normalizeText = (value) => (value || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const tokenize = (value) => (value || '')
+      .toString()
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+
     // Flatten data to lowercase keys and strip spaces for easier matching
     const flatData = {};
     const processData = (incomingData) => {
@@ -30,7 +38,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           if (Array.isArray(section.fields)) {
             section.fields.forEach(field => {
               if (field.label && field.value && field.type !== 'file') {
-                const normalKey = field.label.toLowerCase().replace(/\s+/g, '');
+                const normalKey = normalizeText(field.label);
                 flatData[normalKey] = field.value;
               }
             });
@@ -43,7 +51,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (typeof obj[key] === 'object' && obj[key] !== null) {
               extract(obj[key]);
             } else {
-              const normalKey = key.toLowerCase().replace(/\s+/g, '');
+              const normalKey = normalizeText(key);
               flatData[normalKey] = obj[key];
             }
           }
@@ -53,9 +61,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     };
     processData(data);
 
+    const scoreTokenOverlap = (leftTokens, rightTokens) => {
+      if (!leftTokens.length || !rightTokens.length) return 0;
+      const rightSet = new Set(rightTokens);
+      const overlap = leftTokens.filter(token => rightSet.has(token)).length;
+      return overlap / leftTokens.length;
+    };
+
     const findValueForField = (fieldText) => {
       if (!fieldText) return null;
       const text = fieldText.toLowerCase();
+      const normalizedText = normalizeText(text);
+      const textTokens = tokenize(text);
+
+      // 1) Alias-based quick matching.
       
       for (const [dataKey, aliases] of Object.entries(aliasMap)) {
         if (aliases.some(alias => text.includes(alias))) {
@@ -64,11 +83,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           
           // Also try direct aliases in flatData
           for (const alias of aliases) {
-             const normalizedAlias = alias.replace(/\s+/g, '');
+             const normalizedAlias = normalizeText(alias);
              if (flatData[normalizedAlias]) return flatData[normalizedAlias];
           }
         }
       }
+
+      // 2) Direct + fuzzy matching against any stored profile key.
+      let bestKey = null;
+      let bestScore = 0;
+
+      for (const key of Object.keys(flatData)) {
+        const keyNorm = normalizeText(key);
+        if (!keyNorm) continue;
+
+        if (normalizedText.includes(keyNorm) || keyNorm.includes(normalizedText)) {
+          const score = Math.min(keyNorm.length, normalizedText.length) / Math.max(keyNorm.length, normalizedText.length);
+          if (score > bestScore) {
+            bestScore = score;
+            bestKey = key;
+          }
+        }
+
+        const keyTokens = tokenize(keyNorm);
+        const overlapScore = scoreTokenOverlap(keyTokens, textTokens);
+        if (overlapScore > bestScore) {
+          bestScore = overlapScore;
+          bestKey = key;
+        }
+      }
+
+      // Accept if at least half of the field name meaning matches.
+      if (bestKey && bestScore >= 0.5) {
+        return flatData[bestKey];
+      }
+
       return null;
     };
 
@@ -85,8 +134,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const id = element.id || "";
       const placeholder = element.placeholder || "";
       const ariaLabel = element.getAttribute("aria-label") || "";
+      const labelNode = id ? document.querySelector(`label[for="${id}"]`) : null;
+      const parentLabelNode = element.closest('label');
+      const labelText = labelNode?.innerText || parentLabelNode?.innerText || '';
 
-      const matchString = `${name} ${id} ${placeholder} ${ariaLabel}`;
+      const matchString = `${name} ${id} ${placeholder} ${ariaLabel} ${labelText}`;
       const matchedValue = findValueForField(matchString);
 
       if (matchedValue) {

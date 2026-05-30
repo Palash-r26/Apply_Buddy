@@ -44,6 +44,7 @@ function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [flashKey, setFlashKey] = useState(0);
   const observerRef = useRef(null);
+  const sectionObserverSignature = (data || []).map(section => section.id).join('|');
 
   useEffect(() => {
     // Check if we have a saved user
@@ -124,7 +125,7 @@ function App() {
         observerRef.current.disconnect();
       }
     };
-  }, [data]);
+  }, [sectionObserverSignature]);
 
   useEffect(() => {
     if (data && data.length > 0 && !data.some(s => s.id === activeSection)) {

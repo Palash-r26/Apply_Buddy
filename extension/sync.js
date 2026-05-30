@@ -23,8 +23,38 @@ function syncDataToExtension() {
   }
 }
 
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action !== 'FORCE_SYNC_APPLYBUDDY_DATA') {
+    return false;
+  }
+
+  const dataString = localStorage.getItem('applybuddy_data');
+  if (!dataString) {
+    sendResponse({ success: false, data: null });
+    return true;
+  }
+
+  try {
+    const data = JSON.parse(dataString);
+    chrome.runtime.sendMessage({ action: 'SYNC_APPLYBUDDY_DATA', data });
+    sendResponse({ success: true, data });
+  } catch (e) {
+    console.error('ApplyBuddy force sync parse error:', e);
+    sendResponse({ success: false, data: null });
+  }
+
+  return true;
+});
+
 // Initial sync on load
 syncDataToExtension();
+
+// Re-sync when user returns to this tab.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    syncDataToExtension();
+  }
+});
 
 // Sync when localStorage changes (e.g. from React state updates)
 window.addEventListener('storage', (e) => {
@@ -33,14 +63,11 @@ window.addEventListener('storage', (e) => {
   }
 });
 
-// For same-tab dynamic updates where 'storage' event doesn't fire for the same window,
-// we can hijack localStorage.setItem or rely on a periodic check, or a custom event if the app emits one.
-// Periodic check for simplicity:
-let lastData = localStorage.getItem('applybuddy_data');
-setInterval(() => {
-  const currentData = localStorage.getItem('applybuddy_data');
-  if (currentData !== lastData) {
-    lastData = currentData;
+// Capture same-tab localStorage updates immediately instead of waiting for polling.
+const originalSetItem = localStorage.setItem;
+localStorage.setItem = function patchedSetItem(key, value) {
+  originalSetItem.call(this, key, value);
+  if (key === 'applybuddy_data') {
     syncDataToExtension();
   }
-}, 2000);
+};

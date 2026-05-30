@@ -250,15 +250,29 @@ export function useProfile() {
 
   const updateFieldValue = (sectionId, fieldId, value) => {
     setData(prev => {
+      let changed = false;
       const updated = prev.map(s => {
         if (s.id === sectionId) {
           return {
             ...s,
-            fields: s.fields.map(f => f.id === fieldId ? { ...f, value } : f)
+            fields: s.fields.map(f => {
+              if (f.id === fieldId) {
+                if (f.value !== value) {
+                  changed = true;
+                  return { ...f, value };
+                }
+              }
+              return f;
+            })
           };
         }
         return s;
       });
+
+      if (!changed) {
+        return prev;
+      }
+
       saveDebounced(updated);
       return updated;
     });

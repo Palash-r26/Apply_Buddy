@@ -1,49 +1,71 @@
 let currentData = null;
 
+const APP_HOST_PATTERNS = [
+  'http://localhost:*/*',
+  'https://applybuddy-palash.vercel.app/*',
+  'https://palashrai.me/*',
+  'https://*.palashrai.me/*'
+];
+
+function getFreshDataFromWebApp() {
+  return new Promise((resolve) => {
+    chrome.tabs.query({ url: APP_HOST_PATTERNS }, (tabs) => {
+      if (!tabs || tabs.length === 0) {
+        resolve(null);
+        return;
+      }
+
+      const activeTab = tabs.find((tab) => tab.active) || tabs[0];
+      chrome.tabs.sendMessage(activeTab.id, { action: 'FORCE_SYNC_APPLYBUDDY_DATA' }, (response) => {
+        if (chrome.runtime.lastError) {
+          resolve(null);
+          return;
+        }
+        resolve(response && response.data ? response.data : null);
+      });
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const dataContainer = document.getElementById('dataContainer');
   const fillButton = document.getElementById('fillButton');
   const statusMessage = document.getElementById('statusMessage');
 
-  // Load data from storage
-  chrome.storage.local.get("applybuddy_data", (result) => {
-    const data = result.applybuddy_data;
-    
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      // Provide a mock structure matching the new dynamic format for easy testing
-      currentData = [
-        {
-          id: "mock-1",
-          title: "Personal Info",
-          fields: [
-            { id: "f1", label: "Full Name", value: "John Doe", type: "text" },
-            { id: "f2", label: "Email", value: "john@example.com", type: "email" }
-          ]
-        },
-        {
-          id: "mock-2",
-          title: "Experience",
-          fields: [
-            { id: "f3", label: "Company", value: "Tech Corp", type: "text" }
-          ]
-        }
-      ];
-      
-      // Save it back to simulate what the web app would do
-      chrome.storage.local.set({ applybuddy_data: currentData });
-      
+  const setNoDataState = () => {
+    currentData = null;
+    dataContainer.innerHTML = '<div class="loading">No synced profile data yet. Open ApplyBuddy web app and edit/save your profile.</div>';
+  };
+
+  // Try to force a fresh pull from the web app first, then fall back to cached storage.
+  getFreshDataFromWebApp().then((freshData) => {
+    if (Array.isArray(freshData) && freshData.length > 0) {
+      currentData = freshData;
       renderData(currentData);
-    } else {
+      return;
+    }
+
+    chrome.storage.local.get('applybuddy_data', (result) => {
+      const data = result.applybuddy_data;
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        setNoDataState();
+        return;
+      }
+
       currentData = data;
       renderData(currentData);
-    }
+    });
   });
   
   // Listen for changes from background (live sync)
   chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local' && changes.applybuddy_data) {
       currentData = changes.applybuddy_data.newValue;
-      renderData(currentData);
+      if (!currentData || !Array.isArray(currentData) || currentData.length === 0) {
+        setNoDataState();
+      } else {
+        renderData(currentData);
+      }
     }
   });
 
