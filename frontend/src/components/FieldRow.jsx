@@ -54,6 +54,7 @@ export default function FieldRow({ field, sectionId, onUpdateMeta, onUpdateValue
             <option value="number">number</option>
             <option value="url">url</option>
             <option value="textarea">textarea</option>
+            <option value="file">file</option>
           </select>
           <button className="btn-primary interactive" onClick={handleSaveMeta} style={{ padding: '6px 12px' }}>
             Save
@@ -74,6 +75,32 @@ export default function FieldRow({ field, sectionId, onUpdateMeta, onUpdateValue
               rows={3}
               placeholder="Empty"
             />
+          ) : field.type === 'file' ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <input
+                type="file"
+                className="interactive"
+                style={{ flex: 1 }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                      alert("File too large! Max 2MB.");
+                      e.target.value = '';
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onloadend = () => onUpdateValue(sectionId, field.id, reader.result);
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              {field.value && field.value.startsWith('data:') && (
+                <a href={field.value} download="document" className="btn-ghost interactive" style={{ padding: '4px 8px', textDecoration: 'none' }}>
+                  Download
+                </a>
+              )}
+            </div>
           ) : (
             <input
               type={field.type}
@@ -85,6 +112,20 @@ export default function FieldRow({ field, sectionId, onUpdateMeta, onUpdateValue
           )}
 
           <div style={{ display: 'flex', gap: '6px' }}>
+            {field.value && /^(https?:\/\/|www\.)/i.test(field.value) && (
+              <a
+                href={field.value.startsWith('http') ? field.value : `https://${field.value}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="icon-btn interactive"
+                title="Open link"
+                style={{ display: 'flex', color: 'inherit' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+                </svg>
+              </a>
+            )}
             <button
               className="icon-btn interactive"
               title="Edit label/type"

@@ -56,6 +56,7 @@ export default function AddFieldForm({ onAdd, onCancel }) {
           <option value="number">number</option>
           <option value="url">url</option>
           <option value="textarea">textarea</option>
+          <option value="file">file</option>
         </select>
 
         {type === 'textarea' ? (
@@ -66,6 +67,24 @@ export default function AddFieldForm({ onAdd, onCancel }) {
             value={value}
             style={{ resize: 'none' }}
             onChange={(e) => setValue(e.target.value)}
+          />
+        ) : type === 'file' ? (
+          <input
+            type="file"
+            className="add-field-input interactive"
+            onChange={(e) => {
+               const file = e.target.files[0];
+               if (file) {
+                 if (file.size > 2 * 1024 * 1024) {
+                   alert("File too large! Max 2MB.");
+                   e.target.value = '';
+                   return;
+                 }
+                 const reader = new FileReader();
+                 reader.onloadend = () => setValue(reader.result);
+                 reader.readAsDataURL(file);
+               }
+            }}
           />
         ) : (
           <input

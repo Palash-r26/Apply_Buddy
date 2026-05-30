@@ -1,43 +1,76 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 
-// Default dataset generated at module level with stable UUIDs
 const INITIAL_DATA = [
   {
     id: crypto.randomUUID(),
     title: 'Personal Info',
     fields: [
-      { id: crypto.randomUUID(), label: 'Full Name', value: '', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Email', value: '', type: 'email' },
-      { id: crypto.randomUUID(), label: 'Phone', value: '', type: 'tel' },
-      { id: crypto.randomUUID(), label: 'Date of Birth', value: '', type: 'date' },
-      { id: crypto.randomUUID(), label: 'Gender', value: '', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Full Name', value: 'Palash Rai', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Email', value: 'palashr2612@gmail.com', type: 'email' },
+      { id: crypto.randomUUID(), label: 'Phone', value: '+91 7049261205', type: 'tel' },
+      { id: crypto.randomUUID(), label: 'Location', value: 'City Center, Gwalior', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Pincode', value: '474011', type: 'number' }
     ]
   },
   {
     id: crypto.randomUUID(),
-    title: 'Government IDs',
+    title: 'Links',
     fields: [
-      { id: crypto.randomUUID(), label: 'PAN', value: '', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Aadhaar', value: '', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Portfolio', value: 'https://palashrai.me/', type: 'text' },
+      { id: crypto.randomUUID(), label: 'LinkedIn', value: 'https://linkedin.com/in/palash-rai2612', type: 'text' },
+      { id: crypto.randomUUID(), label: 'GitHub', value: 'https://github.com/Palash-r26', type: 'text' }
     ]
   },
   {
     id: crypto.randomUUID(),
-    title: 'Address',
+    title: 'Education',
     fields: [
-      { id: crypto.randomUUID(), label: 'Address Line 1', value: '', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Address Line 2', value: '', type: 'text' },
-      { id: crypto.randomUUID(), label: 'City', value: '', type: 'text' },
-      { id: crypto.randomUUID(), label: 'State', value: '', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Pincode', value: '', type: 'number' },
-      { id: crypto.randomUUID(), label: 'Country', value: '', type: 'text' }
+      { id: crypto.randomUUID(), label: 'B.Tech College', value: 'Madhav Institute of Technology & Science, Gwalior (M.P.), INDIA', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech Degree', value: 'Computer Science and Design', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech CGPA', value: '8.88', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech Duration', value: '2024 - 2028', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Class XII School', value: 'RamaKrishna Mission (CBSE), Gwalior', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Class XII Score', value: '83%', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Class X School', value: 'Saraswati Shishu Mandir, Gwalior', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Class X Score', value: '88%', type: 'text' }
     ]
   },
   {
     id: crypto.randomUUID(),
-    title: 'Online Accounts',
+    title: 'Experience',
     fields: [
-      { id: crypto.randomUUID(), label: 'Username', value: '', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Company', value: 'Rise and Peak Technologies', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Role', value: 'Digital Marketing Intern', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Duration', value: 'Jun 2025 - Aug 2025', type: 'text' }
+    ]
+  },
+  {
+    id: crypto.randomUUID(),
+    title: 'Skills',
+    fields: [
+      { id: crypto.randomUUID(), label: 'Languages', value: 'C, C++, Java, JavaScript, TypeScript, Python', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Frontend', value: 'React.js, Next.js, HTML5, CSS3', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Backend', value: 'Node.js, Express.js', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Database', value: 'MongoDB, SQL, Firebase', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Core', value: 'Data Structures & Algorithms, DBMS', type: 'text' }
+    ]
+  },
+  {
+    id: crypto.randomUUID(),
+    title: 'Documents',
+    fields: [
+      { id: crypto.randomUUID(), label: 'Resume', value: '', type: 'file' }
+    ]
+  },
+  {
+    id: crypto.randomUUID(),
+    title: 'Projects',
+    fields: [
+      { id: crypto.randomUUID(), label: 'Project 1', value: 'OFP - Offline Fee Portal', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Project 2', value: 'UniTime - AI-Powered Timetable Manager', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Project 3', value: 'Scrollock - Android Productivity App', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Project 4', value: 'Emotion Analyser', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Project 5', value: 'Music Player - VIBE', type: 'text' }
     ]
   }
 ];
@@ -46,7 +79,15 @@ const INITIAL_DATA = [
 const loadCachedData = () => {
   try {
     const saved = localStorage.getItem('applybuddy_data');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Force inject resume data if the user hasn't received it yet, or missing the updated college name, or missing the Documents section
+      if (Array.isArray(parsed) && (!parsed.some(s => s.title === 'Experience') || !parsed.some(s => s.title === 'Education' && s.fields.some(f => f.value === 'Madhav Institute of Technology & Science, Gwalior (M.P.), INDIA')) || parsed.some(s => s.title === 'Address') || !parsed.some(s => s.title === 'Documents'))) {
+        localStorage.setItem('applybuddy_data', JSON.stringify(INITIAL_DATA));
+        return INITIAL_DATA;
+      }
+      return parsed;
+    }
   } catch (err) {
     console.error('Failed to parse localStorage cache:', err);
   }

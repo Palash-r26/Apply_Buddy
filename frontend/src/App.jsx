@@ -27,7 +27,7 @@ function App() {
   } = useProfile();
 
   // Find first section to default to
-  const initialActive = data.length > 0 ? data[0].id : '';
+  const initialActive = data && data.length > 0 ? data[0].id : '';
   const [activeSection, setActiveSection] = useState(initialActive);
   
   // Theme state synced with document element class
@@ -118,7 +118,7 @@ function App() {
 
   // Handle active item adjustment when data items are added or deleted
   useEffect(() => {
-    if (data.length > 0 && !data.some(s => s.id === activeSection)) {
+    if (data && data.length > 0 && !data.some(s => s.id === activeSection)) {
       setActiveSection(data[0].id);
     }
   }, [data, activeSection]);
@@ -137,11 +137,12 @@ function App() {
     );
   }
 
+  // Use robust Flexbox layout instead of CSS Grid to prevent blank screen issues
   return (
     <>
-      <div className="app-grid">
+      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
         <Sidebar
-          sections={data}
+          sections={data || []}
           activeSection={activeSection}
           onLinkClick={handleLinkClick}
           onAddSection={addSection}
@@ -151,9 +152,9 @@ function App() {
           onLogout={handleLogout}
         />
 
-        <div className="content-area">
+        <div style={{ flex: 1, marginLeft: 240, height: '100vh', overflowY: 'auto', backgroundColor: 'var(--bg)' }}>
           <div className="content-inner">
-            {data.length > 0 ? (
+            {data && data.length > 0 ? (
               <motion.div
                 variants={{
                   hidden: { opacity: 0 },

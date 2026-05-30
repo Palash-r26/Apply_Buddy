@@ -4,15 +4,6 @@
 
 ApplyBuddy is a sleek, modern profile manager where you store all the information you repeatedly type into forms — personal details, government IDs, addresses, online accounts, and anything else you need. No hardcoded fields. Every section, every field, every label is created, edited, and deleted by you, inside the app itself.
 
----
-
-## 🖥️ Preview
-
-| Void Theme (Dark) | Paper Theme (Light) |
-|---|---|
-| Dark background `#080808` with electric green `#00ff88` accents | Warm off-white `#f5f0e8` with deep green `#1a6b3c` accents |
-
----
 
 ## ⚡ Tech Stack
 
