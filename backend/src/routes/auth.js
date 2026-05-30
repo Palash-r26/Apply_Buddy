@@ -46,13 +46,13 @@ router.post('/register', async (req, res) => {
     const user = newUser.rows[0];
 
     // Generate JWT token valid for 7 days
-    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user.id, username: user.username, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 
     setTokenCookie(res, token);
 
     res.status(201).json({
       message: 'User registered successfully',
-      user: { id: user.id, username: user.username }
+      user: { id: user.id, username: user.username, email: user.email }
     });
   } catch (err) {
     console.error('Error during registration:', err);
@@ -83,13 +83,13 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate JWT token valid for 7 days
-    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user.id, username: user.username, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 
     setTokenCookie(res, token);
 
     res.json({
       message: 'Logged in successfully',
-      user: { id: user.id, username: user.username }
+      user: { id: user.id, username: user.username, email: user.email }
     });
   } catch (err) {
     console.error('Error during login:', err);
@@ -106,6 +106,83 @@ router.post('/logout', (req, res) => {
 // Get Current User (Me)
 router.get('/me', authenticateToken, (req, res) => {
   res.json({ user: req.user });
+});
+
+// Update User Profile (Username, Email, Password)
+router.put('/profile', authenticateToken, async (req, res) => {
+  const { username, email, currentPassword, newPassword } = req.body;
+  const userId = req.user.id;
+
+  if (!currentPassword) {
+    return res.status(400).json({ error: 'Current password is required to verify changes' });
+  }
+
+  try {
+    // 1. Fetch user from database
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const user = userResult.rows[0];
+
+    // 2. Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ error: 'Incorrect current password' });
+    }
+
+    // 3. Prepare updates
+    let updatedUsername = user.username;
+    let updatedEmail = user.email;
+    let updatedPasswordHash = user.password;
+
+    // Check if username already taken if changing
+    if (username && username !== user.username) {
+      const usernameCheck = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+      if (usernameCheck.rows.length > 0) {
+        return res.status(400).json({ error: 'Username already exists' });
+      }
+      updatedUsername = username;
+    }
+
+    // Check if email already taken if changing
+    if (email && email !== user.email) {
+      const emailCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+      if (emailCheck.rows.length > 0) {
+        return res.status(400).json({ error: 'Email already exists' });
+      }
+      updatedEmail = email;
+    }
+
+    // Hash new password if provided
+    if (newPassword && newPassword.trim() !== '') {
+      updatedPasswordHash = await bcrypt.hash(newPassword, 12);
+    }
+
+    // 4. Perform update query
+    const updateResult = await pool.query(
+      'UPDATE users SET username = $1, email = $2, password = $3 WHERE id = $4 RETURNING id, username, email',
+      [updatedUsername, updatedEmail, updatedPasswordHash, userId]
+    );
+
+    const updatedUser = updateResult.rows[0];
+
+    // 5. Generate a new JWT token since credentials changed
+    const token = jwt.sign(
+      { id: updatedUser.id, username: updatedUser.username, email: updatedUser.email },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    setTokenCookie(res, token);
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: { id: updatedUser.id, username: updatedUser.username, email: updatedUser.email }
+    });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 export default router;
