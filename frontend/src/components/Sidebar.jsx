@@ -13,7 +13,9 @@ export default function Sidebar({
   onLogout,
   isCollapsed,
   onToggleCollapse,
-  onOpenSettings
+  onOpenSettings,
+  isMobileSidebarOpen,
+  onMobileClose
 }) {
   const [showAddInput, setShowAddInput] = useState(false);
   const [sectionTitle, setSectionTitle] = useState('');
@@ -65,27 +67,37 @@ export default function Sidebar({
     }
   }, [showAddInput]);
 
+  // On mobile drawer, always show expanded view regardless of desktop collapse state
+  const effectivelyCollapsed = isCollapsed && !isMobileSidebarOpen;
+
   return (
     <motion.div
-      className="sidebar"
+      className={`sidebar${isMobileSidebarOpen ? ' sidebar-mobile-open' : ''}`}
       initial={{ x: -30, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isCollapsed ? 80 : 240 }}
+      animate={{ x: 0, opacity: 1, width: effectivelyCollapsed ? 80 : 240 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
-      <div className="sidebar-top">
-        <motion.h1
-          className="app-name"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          style={{ display: isCollapsed ? 'none' : 'block' }}
-        >
-          {appNameChars.map((char, index) => (
-            <motion.span key={index} style={{ display: 'inline-block' }} variants={charVariants}>
-              {char}
-            </motion.span>
-          ))}
-        </motion.h1>
+      <div className={`sidebar-top ${effectivelyCollapsed ? 'sidebar-top-collapsed' : ''}`}>
+        {effectivelyCollapsed ? (
+          <img
+            src="/icon.png"
+            alt="ApplyBuddy"
+            className="sidebar-collapsed-logo"
+          />
+        ) : (
+          <motion.h1
+            className="app-name"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {appNameChars.map((char, index) => (
+              <motion.span key={index} style={{ display: 'inline-block' }} variants={charVariants}>
+                {char}
+              </motion.span>
+            ))}
+          </motion.h1>
+        )}
         <button 
           className="sidebar-collapse-btn interactive" 
           onClick={onToggleCollapse}
@@ -102,20 +114,28 @@ export default function Sidebar({
             <li key={section.id}>
               <a
                 href={`#${section.id}`}
-                className={`nav-link interactive ${isActive ? 'active' : ''}`}
+                className={`nav-link interactive ${isActive ? 'active' : ''} ${effectivelyCollapsed ? 'nav-link-collapsed' : ''}`}
+                title={effectivelyCollapsed ? section.title : undefined}
                 onClick={(e) => {
                   e.preventDefault();
                   onLinkClick(section.id);
+                  if (onMobileClose) onMobileClose();
                 }}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="active-dot"
-                    className="nav-dot"
-                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                  />
+                {effectivelyCollapsed ? (
+                  <div className={`nav-dot-collapsed ${isActive ? 'nav-dot-collapsed--active' : ''}`} />
+                ) : (
+                  <>
+                    {isActive && (
+                      <motion.div
+                        layoutId="active-dot"
+                        className="nav-dot"
+                        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                      />
+                    )}
+                    {section.title}
+                  </>
                 )}
-                {!isCollapsed && section.title}
               </a>
             </li>
           );
@@ -147,7 +167,7 @@ export default function Sidebar({
           )}
         </AnimatePresence>
 
-        {!isCollapsed && (
+        {!effectivelyCollapsed && (
           <button
             className="add-section-btn interactive"
             onClick={() => setShowAddInput(prev => !prev)}
@@ -155,6 +175,35 @@ export default function Sidebar({
             + Add Section
           </button>
         )}
+
+        <a 
+          href="/applybuddy-extension.zip" 
+          className="download-ext-btn interactive" 
+          download
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: effectivelyCollapsed ? 'center' : 'flex-start',
+            gap: '8px',
+            color: 'var(--accent)',
+            fontSize: '11px',
+            textDecoration: 'none',
+            margin: '8px 0 12px',
+            padding: '8px 10px',
+            borderRadius: '8px',
+            border: '1px dashed var(--accent)',
+            background: 'var(--accent-dim)',
+            transition: 'all 0.2s ease',
+            cursor: 'pointer'
+          }}
+          title="Download Chrome Extension (.zip)"
+        >
+          {effectivelyCollapsed ? (
+            <span style={{ fontWeight: 800, fontSize: '9px', letterSpacing: '0.5px' }}>EXT</span>
+          ) : (
+            <span style={{ fontWeight: 500, letterSpacing: '0.3px' }}>Download Extension</span>
+          )}
+        </a>
 
         <button className="theme-toggle interactive" onClick={onToggleTheme}>
           <motion.div
@@ -164,13 +213,13 @@ export default function Sidebar({
           >
             ✦
           </motion.div>
-          {!isCollapsed && <span>{theme === 'theme-void' ? 'VOID' : 'PAPER'}</span>}
+          {!effectivelyCollapsed && <span>{theme === 'theme-void' ? 'VOID' : 'PAPER'}</span>}
         </button>
       </div>
 
       {user && (
-        <div className={`sidebar-user ${isCollapsed ? 'collapsed' : ''}`}>
-          {!isCollapsed ? (
+        <div className={`sidebar-user ${effectivelyCollapsed ? 'collapsed' : ''}`}>
+          {!effectivelyCollapsed ? (
             <>
               <span className="sidebar-user-name" title={user.username}>✦ {user.username}</span>
               <button 

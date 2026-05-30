@@ -6,23 +6,26 @@ import { apiFetch } from '../api.js';
 const API_BASE = '/api/auth';
 
 export default function Landing({ onAuth }) {
-  const [mode, setMode] = useState('login'); // 'login' or 'register'
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [mode, setMode] = useState('login'); // 'login' | 'register'
+
+  const [username,        setUsername]        = useState('');
+  const [email,           setEmail]           = useState('');
+  const [password,        setPassword]        = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword,        setShowPassword]        = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [role, setRole] = useState('user'); // For the toggle in UI (Teacher/Admin in Veda, User/Pro in ApplyBuddy)
-  
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+
+  const [error,      setError]      = useState('');
+  const [loading,    setLoading]    = useState(false);
   const [shakeError, setShakeError] = useState(false);
 
-  const usernameRef = useRef(null);
+  const firstInputRef = useRef(null);
 
+  // Reset form on mode switch
   useEffect(() => {
-    if (usernameRef.current) usernameRef.current.focus();
+    setUsername(''); setEmail(''); setPassword(''); setConfirmPassword('');
+    setError(''); setShowPassword(false); setShowConfirmPassword(false);
+    setTimeout(() => firstInputRef.current?.focus(), 50);
   }, [mode]);
 
   const triggerShake = (msg) => {
@@ -36,8 +39,12 @@ export default function Landing({ onAuth }) {
     setError('');
 
     if (mode === 'register') {
-      if (!username.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
+      if (!username.trim() || !email.trim() || !password || !confirmPassword) {
         triggerShake('All fields are required');
+        return;
+      }
+      if (password.length < 6) {
+        triggerShake('Password must be at least 6 characters');
         return;
       }
       if (password !== confirmPassword) {
@@ -45,26 +52,28 @@ export default function Landing({ onAuth }) {
         return;
       }
     } else {
-      if (!email.trim() || !password.trim()) {
+      if (!email.trim() || !password) {
         triggerShake('Email and password are required');
+        return;
+      }
+      if (password.length < 6) {
+        triggerShake('Password must be at least 6 characters');
         return;
       }
     }
 
     setLoading(true);
-
     try {
       const endpoint = mode === 'login' ? '/login' : '/register';
-      const bodyPayload = mode === 'register' 
+      const body = mode === 'register'
         ? { username: username.trim(), email: email.trim(), password }
         : { email: email.trim(), password };
 
-      const res = await apiFetch(`${API_BASE}${endpoint}`, {
-        method: 'POST',
+      const res  = await apiFetch(`${API_BASE}${endpoint}`, {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyPayload)
+        body:    JSON.stringify(body),
       });
-
       const data = await res.json();
 
       if (!res.ok) {
@@ -75,7 +84,7 @@ export default function Landing({ onAuth }) {
 
       localStorage.setItem('applybuddy_user', JSON.stringify(data.user));
       onAuth(data.user);
-    } catch (err) {
+    } catch {
       triggerShake('Cannot connect to server');
       setLoading(false);
     }
@@ -83,38 +92,40 @@ export default function Landing({ onAuth }) {
 
   const features = [
     {
-      icon: <Database size={24} className="feature-icon" />,
+      icon:  <Database size={20} />,
       title: 'Dynamic Data Vault',
-      desc: 'Build custom sections and fields. Store exactly what you need without hardcoded limits.'
+      desc:  'Build custom sections and fields. Store exactly what you need.',
     },
     {
-      icon: <Globe size={24} className="feature-icon" />,
+      icon:  <Globe size={20} />,
       title: 'Browser Integration',
-      desc: 'Instantly sync your vault to the ApplyBuddy Chrome Extension securely.'
+      desc:  'Instantly sync your vault to the ApplyBuddy Chrome Extension.',
     },
     {
-      icon: <Zap size={24} className="feature-icon" />,
+      icon:  <Zap size={20} />,
       title: 'Universal Autofill',
-      desc: 'Map your custom fields to any job application or web form with one click.'
+      desc:  'Map your custom fields to any job application with one click.',
     },
     {
-      icon: <Shield size={24} className="feature-icon" />,
+      icon:  <Shield size={20} />,
       title: 'Privacy First',
-      desc: 'Your data is securely stored and isolated. You control your profile vault.'
-    }
+      desc:  'Your data is securely stored and isolated. You control it.',
+    },
   ];
 
   return (
     <div className="landing-container">
-      {/* Left Side: Hero & Features */}
+
+      {/* ── Left: Hero + Features ── */}
       <div className="landing-content">
         <div className="hero-badge">✦ ApplyBuddy Vault Engine</div>
         <h1 className="hero-title">
-          ApplyBuddy Profile <br/>
+          ApplyBuddy Profile <br />
           <span className="hero-highlight">Platform</span>
         </h1>
         <p className="hero-subtitle">
-          Stop typing the same information. Build your dynamic profile vault and securely autofill applications across the web with our companion extension.
+          Stop typing the same information. Build your dynamic profile vault and
+          securely autofill applications across the web with our companion extension.
         </p>
 
         <div className="feature-grid">
@@ -130,9 +141,9 @@ export default function Landing({ onAuth }) {
         </div>
       </div>
 
-      {/* Right Side: Auth Form */}
+      {/* ── Right: Auth Form ── */}
       <div className="landing-auth-wrapper">
-        <motion.div 
+        <motion.div
           className="auth-box"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -140,95 +151,133 @@ export default function Landing({ onAuth }) {
         >
           <img src="/icon.png" alt="ApplyBuddy Logo" className="auth-box-logo" />
           <h2>Welcome {mode === 'login' ? 'Back' : 'to Vault'}</h2>
-          <p className="auth-box-subtitle">Sign in to access your ApplyBuddy profile.</p>
+          <p className="auth-box-subtitle">
+            {mode === 'login'
+              ? 'Sign in to access your ApplyBuddy profile.'
+              : 'Create your account to get started.'}
+          </p>
 
           <div className="auth-toggle">
-            <button 
-              className={mode === 'login' ? 'active' : ''} 
-              onClick={() => { setMode('login'); setError(''); }}
+            <button
+              type="button"
+              className={mode === 'login' ? 'active' : ''}
+              onClick={() => setMode('login')}
             >
               Sign In
             </button>
-            <button 
-              className={mode === 'register' ? 'active' : ''} 
-              onClick={() => { setMode('register'); setError(''); }}
+            <button
+              type="button"
+              className={mode === 'register' ? 'active' : ''}
+              onClick={() => setMode('register')}
             >
               Create Account
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="auth-form-clean">
+          <form onSubmit={handleSubmit} className="auth-form-clean" noValidate>
+
+            {/* Username — register only */}
             <AnimatePresence>
               {mode === 'register' && (
-                <motion.div 
+                <motion.div
                   className="form-group"
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   style={{ overflow: 'hidden' }}
                 >
-                  <label>USERNAME</label>
+                  <label htmlFor="auth-username">USERNAME</label>
                   <div className="input-wrapper">
                     <User size={16} className="input-icon" />
-                    <input 
-                      type="text" 
-                      placeholder="palash26" 
+                    <input
+                      id="auth-username"
+                      ref={mode === 'register' ? firstInputRef : undefined}
+                      type="text"
+                      placeholder="palash26"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
+                      autoComplete="username"
                     />
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
+            {/* Email */}
             <div className="form-group">
-              <label>EMAIL ADDRESS</label>
+              <label htmlFor="auth-email">EMAIL ADDRESS</label>
               <div className="input-wrapper">
                 <Mail size={16} className="input-icon" />
-                <input 
-                  type="email" 
-                  placeholder="you@applybuddy.com" 
+                <input
+                  id="auth-email"
+                  ref={mode === 'login' ? firstInputRef : undefined}
+                  type="email"
+                  placeholder="you@applybuddy.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                 />
               </div>
             </div>
 
+            {/* Password */}
             <div className="form-group">
-              <label>PASSWORD</label>
+              <label htmlFor="auth-password">
+                PASSWORD
+                <span className="field-hint">min. 6 characters</span>
+              </label>
               <div className="input-wrapper">
                 <Lock size={16} className="input-icon" />
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
-                  placeholder="••••••••" 
+                <input
+                  id="auth-password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  maxLength={128}
                 />
-                <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                <button
+                  type="button"
+                  className="password-toggle interactive"
+                  onClick={() => setShowPassword((p) => !p)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
                   {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
                 </button>
               </div>
             </div>
 
+            {/* Confirm Password — register only */}
             <AnimatePresence>
               {mode === 'register' && (
-                <motion.div 
+                <motion.div
                   className="form-group"
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   style={{ overflow: 'hidden' }}
                 >
-                  <label>CONFIRM PASSWORD</label>
+                  <label htmlFor="auth-confirm-password">CONFIRM PASSWORD</label>
                   <div className="input-wrapper">
                     <Lock size={16} className="input-icon" />
-                    <input 
-                      type={showConfirmPassword ? 'text' : 'password'} 
-                      placeholder="••••••••" 
+                    <input
+                      id="auth-confirm-password"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
+                      maxLength={128}
                     />
-                    <button type="button" className="password-toggle interactive" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    <button
+                      type="button"
+                      className="password-toggle interactive"
+                      onClick={() => setShowConfirmPassword((p) => !p)}
+                      tabIndex={-1}
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
                       {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
@@ -236,21 +285,33 @@ export default function Landing({ onAuth }) {
               )}
             </AnimatePresence>
 
+            {/* Global error banner with shake */}
             <AnimatePresence>
               {error && (
                 <motion.div
                   className="auth-error-clean"
                   initial={{ height: 0, opacity: 0 }}
-                  animate={shakeError ? { height: 'auto', opacity: 1, x: [-5, 5, -5, 5, 0] } : { height: 'auto', opacity: 1 }}
+                  animate={
+                    shakeError
+                      ? { height: 'auto', opacity: 1, x: [-6, 6, -6, 6, 0] }
+                      : { height: 'auto', opacity: 1, x: 0 }
+                  }
                   exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
                 >
                   {error}
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <button type="submit" className="submit-btn interactive" disabled={loading}>
-              {loading ? '...' : mode === 'login' ? 'Sign In →' : 'Create Account →'}
+            <button
+              type="submit"
+              className="submit-btn interactive"
+              disabled={loading}
+            >
+              {loading
+                ? 'Please wait…'
+                : mode === 'login' ? 'Sign In →' : 'Create Account →'}
             </button>
           </form>
         </motion.div>

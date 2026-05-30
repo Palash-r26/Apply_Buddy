@@ -27,6 +27,9 @@ export default function PublicLayout() {
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/about" className="nav-link">About</Link>
             <Link to="/developers" className="nav-link">Developers</Link>
+            <a href="/applybuddy-extension.zip" className="nav-btn-ext interactive" download>
+              Extension
+            </a>
           </div>
         </div>
       </nav>

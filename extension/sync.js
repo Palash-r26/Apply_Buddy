@@ -63,6 +63,13 @@ window.addEventListener('storage', (e) => {
   }
 });
 
+// Receive cross-world real-time updates from React main-world
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'APPLYBUDDY_LOCAL_UPDATE') {
+    syncDataToExtension();
+  }
+});
+
 // Capture same-tab localStorage updates immediately instead of waiting for polling.
 const originalSetItem = localStorage.setItem;
 localStorage.setItem = function patchedSetItem(key, value) {

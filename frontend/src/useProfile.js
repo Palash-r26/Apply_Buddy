@@ -6,48 +6,48 @@ const INITIAL_DATA = [
     id: crypto.randomUUID(),
     title: 'Personal Info',
     fields: [
-      { id: crypto.randomUUID(), label: 'Full Name', value: 'Alex Developer', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Email', value: 'alex@example.com', type: 'email' },
-      { id: crypto.randomUUID(), label: 'Phone', value: '+1 234 567 8900', type: 'tel' },
-      { id: crypto.randomUUID(), label: 'Location', value: 'San Francisco, CA', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Pincode', value: '94105', type: 'number' }
+      { id: crypto.randomUUID(), label: 'Full Name', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Email', value: '', type: 'email' },
+      { id: crypto.randomUUID(), label: 'Phone', value: '', type: 'tel' },
+      { id: crypto.randomUUID(), label: 'Location', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Pincode', value: '', type: 'number' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Links',
     fields: [
-      { id: crypto.randomUUID(), label: 'Portfolio', value: 'https://alexdev.me/', type: 'text' },
-      { id: crypto.randomUUID(), label: 'LinkedIn', value: 'https://linkedin.com/in/alex-developer', type: 'text' },
-      { id: crypto.randomUUID(), label: 'GitHub', value: 'https://github.com/alex-dev', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Portfolio', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'LinkedIn', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'GitHub', value: '', type: 'text' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Education',
     fields: [
-      { id: crypto.randomUUID(), label: 'B.Tech College', value: 'University of Technology', type: 'text' },
-      { id: crypto.randomUUID(), label: 'B.Tech Degree', value: 'Computer Science', type: 'text' },
-      { id: crypto.randomUUID(), label: 'B.Tech CGPA', value: '3.8', type: 'text' },
-      { id: crypto.randomUUID(), label: 'B.Tech Duration', value: '2020 - 2024', type: 'text' }
+      { id: crypto.randomUUID(), label: 'B.Tech College', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech Degree', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech CGPA', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech Duration', value: '', type: 'text' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Experience',
     fields: [
-      { id: crypto.randomUUID(), label: 'Role', value: 'Software Engineer', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Focus', value: 'Full Stack Development', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Role', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Focus', value: '', type: 'text' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Skills',
     fields: [
-      { id: crypto.randomUUID(), label: 'Languages', value: 'JavaScript, TypeScript, Python', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Frontend', value: 'React.js, Node.js, HTML5, CSS3', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Backend', value: 'Node.js, Express.js, PostgreSQL', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Database', value: 'MongoDB, PostgreSQL', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Languages', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Frontend', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Backend', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Database', value: '', type: 'text' }
     ]
   },
   {
@@ -61,11 +61,54 @@ const INITIAL_DATA = [
     id: crypto.randomUUID(),
     title: 'Projects',
     fields: [
-      { id: crypto.randomUUID(), label: 'ApplyBuddy', value: 'Chrome Extension Vault', type: 'text' },
-      { id: crypto.randomUUID(), label: 'VedaAI', value: 'Assessment Engine', type: 'text' }
+      { id: crypto.randomUUID(), label: 'ApplyBuddy', value: '', type: 'text' },
+      { id: crypto.randomUUID(), label: 'VedaAI', value: '', type: 'text' }
     ]
   }
 ];
+
+const MOCK_VALUES_TO_BAN = new Set([
+  'Alex Developer',
+  'alex@example.com',
+  '+1 234 567 8900',
+  'San Francisco, CA',
+  '94105',
+  'https://alexdev.me/',
+  'https://linkedin.com/in/alex-developer',
+  'https://github.com/alex-dev',
+  'University of Technology',
+  'Computer Science',
+  '3.8',
+  '2020 - 2024',
+  'Software Engineer',
+  'Full Stack Development',
+  'JavaScript, TypeScript, Python',
+  'React.js, Node.js, HTML5, CSS3',
+  'Node.js, Express.js, PostgreSQL',
+  'MongoDB, PostgreSQL',
+  'Chrome Extension Vault',
+  'Assessment Engine'
+]);
+
+const sanitizeProfileData = (sections) => {
+  if (!Array.isArray(sections)) return sections;
+  return sections.map(s => {
+    if (!s || typeof s !== 'object') return s;
+    const fields = Array.isArray(s.fields)
+      ? s.fields.map(f => {
+          if (!f || typeof f !== 'object') return f;
+          let val = f.value;
+          if (typeof val === 'string' && MOCK_VALUES_TO_BAN.has(val.trim())) {
+            val = '';
+          } else if (typeof val === 'number' && MOCK_VALUES_TO_BAN.has(val.toString().trim())) {
+            val = '';
+          }
+          return { ...f, value: val };
+        })
+      : [];
+    return { ...s, fields };
+  });
+};
 
 // Load cached data from localStorage as a fallback
 const loadCachedData = () => {
@@ -73,11 +116,16 @@ const loadCachedData = () => {
     const saved = localStorage.getItem('applybuddy_data');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && (!parsed.some(s => s.title === 'Experience') || !parsed.some(s => s.title === 'Education') || parsed.some(s => s.title === 'Address') || !parsed.some(s => s.title === 'Documents'))) {
+      // If cached data contains the old mock information, discard it
+      const hasMockData = Array.isArray(parsed) && parsed.some(s => 
+        s.fields && s.fields.some(f => f.value === 'Alex Developer' || f.value === 'alex@example.com')
+      );
+      
+      if (hasMockData || (Array.isArray(parsed) && (!parsed.some(s => s.title === 'Experience') || !parsed.some(s => s.title === 'Education') || parsed.some(s => s.title === 'Address') || !parsed.some(s => s.title === 'Documents')))) {
         localStorage.setItem('applybuddy_data', JSON.stringify(INITIAL_DATA));
         return INITIAL_DATA;
       }
-      return parsed;
+      return sanitizeProfileData(parsed);
     }
   } catch (err) {
     console.error('Failed to parse localStorage cache:', err);
@@ -85,7 +133,32 @@ const loadCachedData = () => {
   return INITIAL_DATA;
 };
 
-export function useProfile() {
+export function useProfile(user) {
+  const storageKey = user && user.username ? `applybuddy_data_${user.username}` : 'applybuddy_data';
+
+  // Load cached data from localStorage based on active user context
+  const loadCachedData = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // If cached data contains the old mock information, discard it
+        const hasMockData = Array.isArray(parsed) && parsed.some(s => 
+          s.fields && s.fields.some(f => f.value === 'Alex Developer' || f.value === 'alex@example.com')
+        );
+        
+        if (hasMockData || (Array.isArray(parsed) && (!parsed.some(s => s.title === 'Experience') || !parsed.some(s => s.title === 'Education') || parsed.some(s => s.title === 'Address') || !parsed.some(s => s.title === 'Documents')))) {
+          localStorage.setItem(storageKey, JSON.stringify(INITIAL_DATA));
+          return INITIAL_DATA;
+        }
+        return sanitizeProfileData(parsed);
+      }
+    } catch (err) {
+      console.error('Failed to parse localStorage cache:', err);
+    }
+    return INITIAL_DATA;
+  }, [storageKey]);
+
   const [data, setData] = useState(loadCachedData);
   const [toast, setToast] = useState({ visible: false, error: false, message: '' });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -106,93 +179,60 @@ export function useProfile() {
   const showSuccessToast = useCallback(() => triggerToast('✦ saved', false), [triggerToast]);
   const showErrorToast = useCallback(() => triggerToast('Sync failed — data saved locally', true), [triggerToast]);
 
-  // Sync data to backend API
+  // Sync data to backend API (Disabled to preserve user privacy and data security)
   const syncToBackend = useCallback(function syncToBackendImpl(newData, retry = false) {
-    // If not authenticated, the request will fail with 401, but we still try
-    // If not authenticated, the request will fail with 401, but we still try
-    // App.jsx will handle redirecting unauthenticated users
-    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+    // No-op: Data is kept strictly client-side in localStorage for privacy and security.
+  }, []);
 
-    syncTimeoutRef.current = setTimeout(async () => {
-      try {
-        const res = await apiFetch('/api/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          // No Authorization header needed, httpOnly cookie handles it
-          body: JSON.stringify({ data: newData })
-        });
-
-        if (!res.ok) {
-          throw new Error('Sync failed');
-        }
-        // If it was a retry and succeeded, optionally we could show a "Sync recovered" toast
-      } catch (err) {
-        console.error('Backend sync error:', err);
-        showErrorToast();
-        
-        if (!retry) {
-          // Retry once after 3 seconds
-          setTimeout(() => {
-            syncToBackendImpl(newData, true);
-          }, 3000);
-        }
-      }
-    }, 300);
-  }, [showErrorToast]);
-
-  // Immediate save — localStorage + backend sync + toast
+  // Immediate save — localStorage + toast
   const saveImmediate = useCallback((newData) => {
     if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
-    localStorage.setItem('applybuddy_data', JSON.stringify(newData));
-    syncToBackend(newData);
+    const sanitized = sanitizeProfileData(newData);
+    // 1. Save to the active user's persistent scoped key
+    localStorage.setItem(storageKey, JSON.stringify(sanitized));
+    // 2. Also keep the active key synced so the Chrome extension sync.js reads the correct user
+    localStorage.setItem('applybuddy_data', JSON.stringify(sanitized));
+    
+    // Alert the Chrome extension of real-time localStorage changes
+    window.postMessage({ type: 'APPLYBUDDY_LOCAL_UPDATE' }, '*');
     showSuccessToast();
     setHasUnsavedChanges(false);
-  }, [syncToBackend, showSuccessToast]);
+  }, [storageKey, showSuccessToast]);
 
   // Explicit save for value edits (manual-save UX)
   const saveChanges = useCallback(() => {
     if (!hasUnsavedChanges) return;
     if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
-    localStorage.setItem('applybuddy_data', JSON.stringify(data));
-    syncToBackend(data);
+    const sanitized = sanitizeProfileData(data);
+    // 1. Save to the active user's persistent scoped key
+    localStorage.setItem(storageKey, JSON.stringify(sanitized));
+    // 2. Keep generic key synced for Chrome extension compatibility
+    localStorage.setItem('applybuddy_data', JSON.stringify(sanitized));
+
+    // Alert the Chrome extension of real-time localStorage changes
+    window.postMessage({ type: 'APPLYBUDDY_LOCAL_UPDATE' }, '*');
     showSuccessToast();
     setHasUnsavedChanges(false);
-  }, [data, hasUnsavedChanges, syncToBackend, showSuccessToast]);
+  }, [data, hasUnsavedChanges, storageKey, showSuccessToast]);
 
-  // Load profile data from backend on mount
+  // Load profile data from localStorage on mount (relying strictly on local storage)
   const loadFromBackend = useCallback(async () => {
     setIsLoaded(true);
-    try {
-      const res = await apiFetch('/api/profile');
-
-      if (res.ok) {
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-          const serverData = await res.json();
-          if (Array.isArray(serverData) && serverData.length > 0) {
-            setData(serverData);
-            localStorage.setItem('applybuddy_data', JSON.stringify(serverData));
-            setHasUnsavedChanges(false);
-          } else {
-            // Server has no data — push the local/default data to server
-            const localData = loadCachedData();
-            setData(localData);
-            syncToBackend(localData);
-            setHasUnsavedChanges(false);
-          }
-        } else {
-          throw new Error('Backend returned a non-JSON response');
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load from backend, using cache:', err);
+    const localData = loadCachedData();
+    setData(localData);
+    
+    // Make sure generic key has the active user's data loaded for the Chrome extension
+    if (user && user.username) {
+      localStorage.setItem('applybuddy_data', JSON.stringify(localData));
     }
+    
+    setHasUnsavedChanges(false);
     setIsLoaded(true);
-  }, [syncToBackend]);
+  }, [loadCachedData, user]);
 
   useEffect(() => {
     loadFromBackend();
-  }, [loadFromBackend]);
+  }, [user, loadFromBackend]);
 
   // CRUD handlers
   const addSection = (title) => {

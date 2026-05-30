@@ -33,7 +33,7 @@ function App() {
     toast,
     loadFromBackend,
     triggerToast
-  } = useProfile();
+  } = useProfile(user);
 
   const [showSettings, setShowSettings] = useState(false);
   const initialActive = data && data.length > 0 ? data[0].id : '';
@@ -44,6 +44,7 @@ function App() {
   });
   
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [flashKey, setFlashKey] = useState(0);
   const observerRef = useRef(null);
   const sectionObserverSignature = (data || []).map(section => section.id).join('|');
@@ -141,6 +142,14 @@ function App() {
 
   const vaultElement = (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      {/* Mobile overlay backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
       <Sidebar
         sections={data || []}
         activeSection={activeSection}
@@ -153,16 +162,30 @@ function App() {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
         onOpenSettings={() => setShowSettings(true)}
+        isMobileSidebarOpen={isMobileSidebarOpen}
+        onMobileClose={() => setIsMobileSidebarOpen(false)}
       />
 
-      <div style={{ 
-        flex: 1, 
-        marginLeft: isSidebarCollapsed ? 80 : 240, 
-        height: '100vh', 
-        overflowY: 'auto', 
-        backgroundColor: 'var(--bg)',
-        transition: 'margin-left 0.3s ease'
-      }}>
+      <div
+        className="vault-content-area"
+        style={{ 
+          flex: 1, 
+          marginLeft: isSidebarCollapsed ? 80 : 240, 
+          height: '100vh', 
+          overflowY: 'auto', 
+          backgroundColor: 'var(--bg)',
+          transition: 'margin-left 0.3s ease'
+        }}
+      >
+        {/* Mobile hamburger button */}
+        <button
+          className="mobile-menu-btn interactive"
+          onClick={() => setIsMobileSidebarOpen(true)}
+          aria-label="Open menu"
+        >
+          <span /><span /><span />
+        </button>
+
         <div className="content-inner">
           {data && data.length > 0 ? (
             <motion.div

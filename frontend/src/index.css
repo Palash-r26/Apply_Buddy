@@ -109,6 +109,26 @@ body {
   min-height: 80px;
 }
 
+/* When collapsed: center the icon since the h1 is gone */
+.sidebar-top-collapsed {
+  justify-content: center;
+}
+
+/* Logo shown in place of the app name when sidebar is collapsed */
+.sidebar-collapsed-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sidebar-collapsed-logo:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
 .sidebar-collapse-btn {
   position: absolute;
   right: -14px;
@@ -150,6 +170,17 @@ body {
   overflow-x: hidden;
 }
 
+/* Scope sidebar nav tightly so the public .nav-links rule can't bleed list markers in */
+.sidebar ul.nav-links {
+  list-style: none;
+  display: block;    /* flex from public nav rule must not apply here */
+}
+
+.sidebar ul.nav-links li {
+  list-style: none;
+  display: block;
+}
+
 .nav-link {
   display: flex;
   align-items: center;
@@ -181,6 +212,34 @@ body {
   border-radius: 50%;
   background-color: var(--accent);
   flex-shrink: 0;
+}
+
+/* Collapsed-mode nav dots (visible for ALL items, accent for active) */
+.nav-link-collapsed {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.nav-dot-collapsed {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--text-secondary);
+  opacity: 0.4;
+  flex-shrink: 0;
+  transition: background-color 0.2s, opacity 0.2s, transform 0.2s;
+}
+
+.nav-dot-collapsed--active {
+  background-color: var(--accent);
+  opacity: 1;
+  transform: scale(1.4);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+.nav-link-collapsed:hover .nav-dot-collapsed {
+  opacity: 0.8;
+  transform: scale(1.2);
 }
 
 .sidebar-bottom {
@@ -631,22 +690,55 @@ textarea.field-value-input {
   flex-wrap: wrap;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .public-nav {
-    border-radius: 24px;
-    padding: 16px 24px;
-    width: calc(100% - 32px);
-    margin: 16px;
+    /* Reset align-self: center so the explicit width actually applies */
+    align-self: auto;
+    border-radius: 999px;
+    padding: 8px 16px;
+    width: calc(100% - 24px);
+    margin: 10px 12px 0;
+    box-sizing: border-box;
   }
+
   .nav-container {
-    flex-direction: column;
-    gap: 16px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    flex-wrap: nowrap;
   }
+
+  /* Logo only on mobile — hide the "ApplyBuddy" text */
+  .nav-brand span {
+    display: none;
+  }
+
+  .nav-brand {
+    gap: 0;
+  }
+
+  .nav-logo {
+    width: 28px;
+    height: 28px;
+  }
+
   .nav-links {
-    gap: 16px;
-    justify-content: center;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .nav-links .nav-link {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
   }
 }
+
 
 .nav-links .nav-link {
   text-decoration: none;
@@ -658,6 +750,35 @@ textarea.field-value-input {
 
 .nav-links .nav-link:hover {
   color: var(--text-primary);
+}
+
+.nav-btn-ext {
+  text-decoration: none;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 13px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  padding: 5px 13px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-btn-ext:hover {
+  transform: translateY(-1px);
+  background: var(--accent);
+  color: var(--bg) !important;
+  box-shadow: 0 4px 14px var(--accent-dim);
+}
+
+@media (max-width: 768px) {
+  .nav-btn-ext {
+    font-size: 10px !important;
+    padding: 3px 8px !important;
+  }
 }
 
 .theme-toggle-btn {
@@ -1425,6 +1546,29 @@ html.theme-void .portfolio-btn:hover {
   font-size: 13px;
   margin-bottom: 16px;
   text-align: center;
+  border: 1px solid var(--danger);
+}
+
+/* Hint text beside label (e.g. "min. 6 characters") */
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-hint {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Disabled submit button */
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .submit-btn {
@@ -1773,3 +1917,405 @@ html.theme-void .portfolio-btn:hover {
     display: none;
   }
 }
+
+/* ============================================================
+   MOBILE RESPONSIVENESS — max-width: 768px
+   Desktop styles above are untouched.
+   ============================================================ */
+
+/* --- Hamburger Button (hidden on desktop) --- */
+.mobile-menu-btn {
+  display: none;
+}
+
+/* --- Sidebar overlay backdrop (hidden on desktop) --- */
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+
+  /* ── Hamburger button ── */
+  .mobile-menu-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 200;
+    background-color: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    cursor: pointer;
+    align-items: center;
+  }
+
+  .mobile-menu-btn span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background-color: var(--text-primary);
+    border-radius: 2px;
+    transition: background-color 0.2s;
+  }
+
+  .mobile-menu-btn:hover span {
+    background-color: var(--accent);
+  }
+
+  /* ── Sidebar overlay backdrop ── */
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    z-index: 90;
+  }
+
+  /* ── Sidebar: hidden off-screen by default on mobile ── */
+  /* Always show at full 240px width as a drawer — never collapsed on mobile */
+  .sidebar {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+    transform: translateX(-110%) !important;
+    transition: transform 0.3s ease !important;
+    width: 240px !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Show all nav text in drawer (even if desktop sidebar is collapsed) */
+  .sidebar .nav-link-collapsed {
+    justify-content: flex-start;
+    padding: 10px 24px;
+  }
+
+  .sidebar .nav-dot-collapsed {
+    display: none;
+  }
+
+  /* When open, slide in */
+  .sidebar.sidebar-mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  /* Hide the collapse chevron on mobile — only hamburger is used */
+  .sidebar-collapse-btn {
+    display: none !important;
+  }
+
+  /* ── Vault content: full width on mobile (no margin-left) ── */
+  .vault-content-area {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* ── Content inner: reduce padding ── */
+  .content-inner {
+    padding: 64px 16px 24px; /* top padding gives room for hamburger */
+  }
+
+  /* ── Section blocks: tighter padding ── */
+  .section-block {
+    padding: 18px 14px;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-size: 18px;
+  }
+
+  /* ── Field rows: stack label above value on mobile ── */
+  .field-row {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: auto;
+    padding: 10px 10px 10px 14px;
+    gap: 4px;
+  }
+
+  .field-label {
+    width: 100%;       /* was fixed 200px */
+    font-size: 11px;
+    padding-bottom: 2px;
+  }
+
+  .field-value-input {
+    width: 100%;
+    font-size: 14px;
+    padding: 4px 0;
+  }
+
+  textarea.field-value-input {
+    min-height: 60px;
+  }
+
+  /* Always show field action buttons on mobile (no hover) */
+  .field-row .icon-btn,
+  .section-header .icon-btn {
+    opacity: 1;
+  }
+
+  /* ── Add field form ── */
+  .add-field-row {
+    flex-direction: column;
+  }
+
+  /* ── Landing page — spacious mobile ── */
+  .landing-container {
+    flex-direction: column;
+    min-height: auto;
+    gap: 20px;             /* breathing room between hero and auth */
+    padding-bottom: 36px;
+  }
+
+  .landing-content {
+    padding: 28px 22px 16px;
+    align-items: center;
+    text-align: center;
+    flex: none;
+  }
+
+  .hero-badge {
+    align-self: center;
+    font-size: 11px;
+    padding: 5px 12px;
+    margin-bottom: 18px;
+  }
+
+  .hero-title {
+    font-size: 28px;
+    letter-spacing: -0.5px;
+    margin-bottom: 14px;
+    line-height: 1.15;
+  }
+
+  .hero-subtitle {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 22px;
+    max-width: 100%;
+  }
+
+  /* Show only 2 feature cards on mobile, single column */
+  .feature-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    text-align: left;
+  }
+
+  /* Hide last 2 feature cards on mobile to save space */
+  .feature-card:nth-child(n+3) {
+    display: none;
+  }
+
+  .feature-card {
+    padding: 16px;
+    gap: 14px;
+    border-radius: 10px;
+  }
+
+  .feature-icon-wrapper {
+    width: 34px;
+    height: 34px;
+    border-radius: 7px;
+    flex-shrink: 0;
+  }
+
+  .feature-card h3 {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+
+  .feature-card p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .landing-auth-wrapper {
+    flex: none;
+    padding: 0 18px 36px;
+    width: 100%;
+  }
+
+  .auth-box {
+    padding: 28px 22px 24px;
+    max-width: 100%;
+    border-radius: 20px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+  }
+
+  .auth-box-logo {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 14px;
+  }
+
+  .auth-box h2 {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .auth-box-subtitle {
+    font-size: 13px;
+    margin-bottom: 22px;
+    line-height: 1.5;
+  }
+
+  .auth-toggle {
+    margin-bottom: 22px;
+  }
+
+  .auth-toggle button {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  .form-group label {
+    margin-bottom: 10px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .input-wrapper input {
+    padding: 13px 14px 13px 42px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  .submit-btn {
+    padding: 14px;
+    font-size: 15px;
+    margin-top: 8px;
+    margin-bottom: 0;
+    border-radius: 10px;
+  }
+
+  /* ── Footer ── */
+  .footer-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    padding-bottom: 24px;
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .public-footer {
+    padding: 32px 20px 20px;
+  }
+
+
+  /* ── Simple pages (About) ── */
+  .simple-page {
+    margin: 32px auto;
+    padding: 0 20px;
+  }
+
+  .simple-page h1 {
+    font-size: 28px;
+  }
+
+  .simple-page h3 {
+    font-size: 20px;
+    margin-top: 32px;
+  }
+
+  /* ── Developers page ── */
+  .dev-page-container {
+    padding: 0 16px 48px;
+  }
+
+  .dev-title {
+    font-size: 32px;
+  }
+
+  .dev-profile-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+    padding: 24px 20px;
+  }
+
+  .dev-photo {
+    width: 140px;
+    height: 180px;
+  }
+
+  .dev-profile-info h2 {
+    font-size: 26px;
+  }
+
+  .dev-tags {
+    justify-content: center;
+  }
+
+  .dev-social-buttons {
+    justify-content: center;
+  }
+
+  .dev-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .dev-grid-card {
+    padding: 20px;
+  }
+
+  .dev-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 0;
+    margin-bottom: 28px;
+  }
+
+  /* ── Settings modal ── */
+  .settings-modal {
+    max-width: 100%;
+    margin: 0 8px;
+    border-radius: 16px;
+  }
+
+  .modal-form {
+    max-height: 75vh;
+    padding: 16px;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    right: 16px;
+    max-width: calc(100% - 32px);
+  }
+
+  /* ── Save button in vault ── */
+  .btn-primary.interactive {
+    font-size: 13px;
+    padding: 10px 18px;
+  }
+}
+
