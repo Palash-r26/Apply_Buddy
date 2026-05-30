@@ -1,17 +1,17 @@
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function Toast({ visible }) {
+export default function Toast({ visible, error = false, message = '✦ saved' }) {
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="toast"
+          className={`toast ${error ? 'toast-error' : ''}`}
           initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 8, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         >
-          <span>✦ saved</span>
+          <span>{message}</span>
         </motion.div>
       )}
     </AnimatePresence>

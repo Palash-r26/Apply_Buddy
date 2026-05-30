@@ -53,51 +53,66 @@ const loadCachedData = () => {
   return INITIAL_DATA;
 };
 
-// Get auth token helper
-const getToken = () => localStorage.getItem('applybuddy_token');
-
 export function useProfile() {
   const [data, setData] = useState(loadCachedData);
-  const [toastVisible, setToastVisible] = useState(false);
+  const [toast, setToast] = useState({ visible: false, error: false, message: '' });
   const [isLoaded, setIsLoaded] = useState(false);
 
   const debounceTimeoutRef = useRef(null);
   const toastTimeoutRef = useRef(null);
   const syncTimeoutRef = useRef(null);
 
-  // Toast with 1500ms auto-dismiss, resetting timer on repeated calls
-  const showToast = useCallback(() => {
+  const triggerToast = useCallback((message, error = false) => {
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToastVisible(true);
-    toastTimeoutRef.current = setTimeout(() => setToastVisible(false), 1500);
+    setToast({ visible: true, error, message });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(prev => ({ ...prev, visible: false }));
+    }, error ? 3000 : 1500); // Errors stay a bit longer
   }, []);
+
+  const showSuccessToast = useCallback(() => triggerToast('✦ saved', false), [triggerToast]);
+  const showErrorToast = useCallback(() => triggerToast('Sync failed — data saved locally', true), [triggerToast]);
 
   // Sync data to backend API
-  const syncToBackend = useCallback((newData) => {
-    const token = getToken();
-    if (!token) return; // not logged in, skip API sync
-
+  const syncToBackend = useCallback((newData, retry = false) => {
+    // If not authenticated, the request will fail with 401, but we still try
+    // App.jsx will handle redirecting unauthenticated users
     if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
 
-    syncTimeoutRef.current = setTimeout(() => {
-      fetch('/api/profile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ data: newData })
-      }).catch(err => console.error('Backend sync error:', err));
+    syncTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // No Authorization header needed, httpOnly cookie handles it
+          body: JSON.stringify({ data: newData })
+        });
+
+        if (!res.ok) {
+          throw new Error('Sync failed');
+        }
+        // If it was a retry and succeeded, optionally we could show a "Sync recovered" toast
+      } catch (err) {
+        console.error('Backend sync error:', err);
+        showErrorToast();
+        
+        if (!retry) {
+          // Retry once after 3 seconds
+          setTimeout(() => {
+            syncToBackend(newData, true);
+          }, 3000);
+        }
+      }
     }, 300);
-  }, []);
+  }, [showErrorToast]);
 
   // Immediate save — localStorage + backend sync + toast
   const saveImmediate = useCallback((newData) => {
     if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
     localStorage.setItem('applybuddy_data', JSON.stringify(newData));
     syncToBackend(newData);
-    showToast();
-  }, [syncToBackend, showToast]);
+    showSuccessToast();
+  }, [syncToBackend, showSuccessToast]);
 
   // Debounced save (typing in value fields)
   const saveDebounced = useCallback((newData) => {
@@ -105,22 +120,14 @@ export function useProfile() {
     debounceTimeoutRef.current = setTimeout(() => {
       localStorage.setItem('applybuddy_data', JSON.stringify(newData));
       syncToBackend(newData);
-      showToast();
+      showSuccessToast();
     }, 800);
-  }, [syncToBackend, showToast]);
+  }, [syncToBackend, showSuccessToast]);
 
-  // Load profile data from backend on mount (if authenticated)
+  // Load profile data from backend on mount
   const loadFromBackend = useCallback(async () => {
-    const token = getToken();
-    if (!token) {
-      setIsLoaded(true);
-      return;
-    }
-
     try {
-      const res = await fetch('/api/profile', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await fetch('/api/profile'); // credentials are sent via cookies automatically by Vite proxy
 
       if (res.ok) {
         const serverData = await res.json();
@@ -241,7 +248,7 @@ export function useProfile() {
     updateFieldMeta,
     updateFieldValue,
     deleteField,
-    toastVisible,
+    toast,
     loadFromBackend
   };
 }

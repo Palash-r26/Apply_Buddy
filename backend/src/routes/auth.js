@@ -3,11 +3,21 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db/pool.js';
 import dotenv from 'dotenv';
+import { authenticateToken } from '../middleware/auth.js';
 
 dotenv.config();
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'applybuddy_secret_key';
+
+const setTokenCookie = (res, token) => {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
+};
 
 // Register User
 router.post('/register', async (req, res) => {
@@ -24,8 +34,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
-    // Hash password with salt rounds
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password with 12 salt rounds
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     // Insert user and fetch returned id and username
     const newUser = await pool.query(
@@ -38,10 +48,11 @@ router.post('/register', async (req, res) => {
     // Generate JWT token valid for 7 days
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
 
+    setTokenCookie(res, token);
+
     res.status(201).json({
       message: 'User registered successfully',
-      user: { id: user.id, username: user.username },
-      token
+      user: { id: user.id, username: user.username }
     });
   } catch (err) {
     console.error('Error during registration:', err);
@@ -75,15 +86,27 @@ router.post('/login', async (req, res) => {
     // Generate JWT token valid for 7 days
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
 
+    setTokenCookie(res, token);
+
     res.json({
       message: 'Logged in successfully',
-      user: { id: user.id, username: user.username },
-      token
+      user: { id: user.id, username: user.username }
     });
   } catch (err) {
     console.error('Error during login:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// Logout User
+router.post('/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ message: 'Logged out successfully' });
+});
+
+// Get Current User (Me)
+router.get('/me', authenticateToken, (req, res) => {
+  res.json({ user: req.user });
 });
 
 export default router;

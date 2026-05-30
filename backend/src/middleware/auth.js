@@ -6,8 +6,8 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || 'applybuddy_secret_key';
 
 export function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  // Read token from cookies
+  const token = req.cookies?.token;
 
   if (!token) {
     return res.status(401).json({ error: 'Access token missing' });

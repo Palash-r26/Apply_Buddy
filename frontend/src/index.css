@@ -513,6 +513,11 @@ textarea.field-value-input {
   gap: 6px;
 }
 
+.toast.toast-error {
+  background-color: var(--danger);
+  color: #fff;
+}
+
 /* Empty State */
 .empty-state {
   display: flex;

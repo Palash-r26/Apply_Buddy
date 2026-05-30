@@ -61,10 +61,9 @@ export default function AuthScreen({ onAuth }) {
         return;
       }
 
-      // Store token and user info, then notify parent
-      localStorage.setItem('applybuddy_token', data.token);
+      // Token is set via httpOnly cookie, just store user and notify
       localStorage.setItem('applybuddy_user', JSON.stringify(data.user));
-      onAuth(data.token, data.user);
+      onAuth(data.user);
     } catch (err) {
       triggerShake('Cannot connect to server');
       setLoading(false);

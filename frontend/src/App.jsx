@@ -9,13 +9,8 @@ import AuthScreen from './components/AuthScreen';
 
 function App() {
   // Auth state
-  const [token, setToken] = useState(() => localStorage.getItem('applybuddy_token'));
-  const [user, setUser] = useState(() => {
-    try {
-      const u = localStorage.getItem('applybuddy_user');
-      return u ? JSON.parse(u) : null;
-    } catch { return null; }
-  });
+  const [user, setUser] = useState(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   const {
     data,
@@ -27,7 +22,7 @@ function App() {
     updateFieldMeta,
     updateFieldValue,
     deleteField,
-    toastVisible,
+    toast,
     loadFromBackend
   } = useProfile();
 
@@ -45,20 +40,42 @@ function App() {
 
   const observerRef = useRef(null);
 
+  // Check auth session on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        setUser(null);
+      } finally {
+        setIsAuthChecking(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
   // Auth handler — called from AuthScreen on successful login/register
-  const handleAuth = (newToken, newUser) => {
-    setToken(newToken);
+  const handleAuth = (newUser) => {
     setUser(newUser);
     // Trigger a fresh load from the backend
     loadFromBackend();
   };
 
   // Logout handler
-  const handleLogout = () => {
-    localStorage.removeItem('applybuddy_token');
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
     localStorage.removeItem('applybuddy_user');
     localStorage.removeItem('applybuddy_data');
-    setToken(null);
     setUser(null);
   };
 
@@ -121,8 +138,12 @@ function App() {
     }
   }, [data, activeSection]);
 
+  if (isAuthChecking) {
+    return null; // Or a subtle loading spinner
+  }
+
   // If not authenticated, show auth screen
-  if (!token) {
+  if (!user) {
     return (
       <>
         <AuthScreen onAuth={handleAuth} />
@@ -193,7 +214,7 @@ function App() {
         </div>
       </div>
 
-      <Toast visible={toastVisible} />
+      <Toast visible={toast.visible} error={toast.error} message={toast.message} />
       <Cursor />
     </>
   );
