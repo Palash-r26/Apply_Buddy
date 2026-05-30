@@ -172,6 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (response.filledCount > 0) {
             statusMessage.textContent = `${response.filledCount} fields filled!`;
             statusMessage.style.color = 'var(--success-color)';
+          } else if (response.attemptedCount > 0) {
+            statusMessage.textContent = `Matched ${response.attemptedCount} field(s), but page blocked updates.`;
+            statusMessage.style.color = '#f59e0b';
           } else {
             statusMessage.textContent = 'No fields matched';
             statusMessage.style.color = 'var(--text-secondary)';

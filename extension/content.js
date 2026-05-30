@@ -2,6 +2,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "fill_form") {
     const data = request.data || {};
     let filledCount = 0;
+    let attemptedCount = 0;
 
     const inputs = document.querySelectorAll("input, textarea, select");
 
@@ -121,6 +122,54 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return null;
     };
 
+    const getTextFromIds = (idsValue) => {
+      if (!idsValue) return '';
+      const ids = idsValue.split(/\s+/).filter(Boolean);
+      return ids
+        .map((refId) => {
+          const node = document.getElementById(refId);
+          return node ? (node.innerText || node.textContent || '') : '';
+        })
+        .join(' ')
+        .trim();
+    };
+
+    const getNearbyQuestionText = (element) => {
+      let current = element;
+      let depth = 0;
+
+      while (current && depth < 5) {
+        const container = current.closest('[role="listitem"], [data-params], .freebirdFormviewerViewItemsItemItem') || current.parentElement;
+        if (!container) break;
+
+        const rawText = (container.innerText || container.textContent || '').trim();
+        const cleaned = rawText
+          .replace(/\bYour answer\b/gi, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        if (cleaned.length > 0) {
+          return cleaned.slice(0, 300);
+        }
+
+        current = container.parentElement;
+        depth += 1;
+      }
+
+      return '';
+    };
+
+    const setNativeInputValue = (element, value) => {
+      const stringValue = value == null ? '' : String(value);
+      const prototype = Object.getPrototypeOf(element);
+      const valueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+      if (valueSetter) {
+        valueSetter.call(element, stringValue);
+      } else {
+        element.value = stringValue;
+      }
+    };
+
     inputs.forEach(element => {
       // Don't fill hidden, submit, button, etc.
       if (element.tagName.toLowerCase() === 'input') {
@@ -134,14 +183,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const id = element.id || "";
       const placeholder = element.placeholder || "";
       const ariaLabel = element.getAttribute("aria-label") || "";
+      const ariaLabelledBy = getTextFromIds(element.getAttribute('aria-labelledby') || '');
+      const describedBy = getTextFromIds(element.getAttribute('aria-describedby') || '');
       const labelNode = id ? document.querySelector(`label[for="${id}"]`) : null;
       const parentLabelNode = element.closest('label');
       const labelText = labelNode?.innerText || parentLabelNode?.innerText || '';
+      const nearbyQuestionText = getNearbyQuestionText(element);
 
-      const matchString = `${name} ${id} ${placeholder} ${ariaLabel} ${labelText}`;
+      const matchString = `${name} ${id} ${placeholder} ${ariaLabel} ${ariaLabelledBy} ${describedBy} ${labelText} ${nearbyQuestionText}`;
       const matchedValue = findValueForField(matchString);
 
       if (matchedValue) {
+        attemptedCount++;
         let changed = false;
         
         if (element.tagName.toLowerCase() === 'select') {
@@ -165,7 +218,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
         } else {
            if (element.value !== matchedValue) {
-             element.value = matchedValue;
+             setNativeInputValue(element, matchedValue);
              changed = true;
            }
         }
@@ -178,7 +231,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     });
 
-    sendResponse({ success: true, filledCount: filledCount });
+    sendResponse({ success: true, filledCount: filledCount, attemptedCount });
   }
   return true; // Keep the message channel open for async response if needed
 });
