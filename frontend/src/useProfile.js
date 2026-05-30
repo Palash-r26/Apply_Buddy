@@ -89,6 +89,7 @@ export function useProfile() {
   const [data, setData] = useState(loadCachedData);
   const [toast, setToast] = useState({ visible: false, error: false, message: '' });
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const debounceTimeoutRef = useRef(null);
   const toastTimeoutRef = useRef(null);
@@ -145,17 +146,18 @@ export function useProfile() {
     localStorage.setItem('applybuddy_data', JSON.stringify(newData));
     syncToBackend(newData);
     showSuccessToast();
+    setHasUnsavedChanges(false);
   }, [syncToBackend, showSuccessToast]);
 
-  // Debounced save (typing in value fields)
-  const saveDebounced = useCallback((newData) => {
+  // Explicit save for value edits (manual-save UX)
+  const saveChanges = useCallback(() => {
+    if (!hasUnsavedChanges) return;
     if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
-    debounceTimeoutRef.current = setTimeout(() => {
-      localStorage.setItem('applybuddy_data', JSON.stringify(newData));
-      syncToBackend(newData);
-      showSuccessToast();
-    }, 800);
-  }, [syncToBackend, showSuccessToast]);
+    localStorage.setItem('applybuddy_data', JSON.stringify(data));
+    syncToBackend(data);
+    showSuccessToast();
+    setHasUnsavedChanges(false);
+  }, [data, hasUnsavedChanges, syncToBackend, showSuccessToast]);
 
   // Load profile data from backend on mount
   const loadFromBackend = useCallback(async () => {
@@ -170,11 +172,13 @@ export function useProfile() {
           if (Array.isArray(serverData) && serverData.length > 0) {
             setData(serverData);
             localStorage.setItem('applybuddy_data', JSON.stringify(serverData));
+            setHasUnsavedChanges(false);
           } else {
             // Server has no data — push the local/default data to server
             const localData = loadCachedData();
             setData(localData);
             syncToBackend(localData);
+            setHasUnsavedChanges(false);
           }
         } else {
           throw new Error('Backend returned a non-JSON response');
@@ -273,7 +277,7 @@ export function useProfile() {
         return prev;
       }
 
-      saveDebounced(updated);
+      setHasUnsavedChanges(true);
       return updated;
     });
   };
@@ -301,6 +305,8 @@ export function useProfile() {
     updateFieldMeta,
     updateFieldValue,
     deleteField,
+    saveChanges,
+    hasUnsavedChanges,
     toast,
     loadFromBackend,
     triggerToast

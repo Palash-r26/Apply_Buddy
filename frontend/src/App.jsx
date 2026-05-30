@@ -28,6 +28,8 @@ function App() {
     updateFieldMeta,
     updateFieldValue,
     deleteField,
+    saveChanges,
+    hasUnsavedChanges,
     toast,
     loadFromBackend,
     triggerToast
@@ -163,6 +165,14 @@ function App() {
         transition: 'margin-left 0.3s ease'
       }}>
         <div className="content-inner">
+          {hasUnsavedChanges && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+              <button className="btn-primary interactive" onClick={saveChanges}>
+                Save Changes
+              </button>
+            </div>
+          )}
+
           {data && data.length > 0 ? (
             <motion.div
               variants={{
