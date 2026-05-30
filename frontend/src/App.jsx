@@ -10,7 +10,7 @@ import AuthScreen from './components/AuthScreen';
 function App() {
   // Auth state
   const [user, setUser] = useState({ id: 'local-guest', username: 'Guest' });
-  const [isAuthChecking, setIsAuthChecking] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   const {
     data,
@@ -42,7 +42,7 @@ function App() {
 
   // Check auth session on mount
   useEffect(() => {
-    // checkAuth temporarily disabled
+    setIsAuthChecking(false);
   }, []);
 
   // Auth handler — called from AuthScreen on successful login/register
