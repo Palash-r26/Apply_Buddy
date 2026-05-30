@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ override: true });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'applybuddy_secret_key';
 

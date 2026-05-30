@@ -5,7 +5,7 @@ import { pool } from '../db/pool.js';
 import dotenv from 'dotenv';
 import { authenticateToken } from '../middleware/auth.js';
 
-dotenv.config();
+dotenv.config({ override: true });
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'applybuddy_secret_key';
