@@ -9,28 +9,25 @@ document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get("applybuddy_data", (result) => {
     const data = result.applybuddy_data;
     
-    if (!data || Object.keys(data).length === 0) {
-      // Show mock data or message if empty, and write to storage so we can test easily
-      currentData = {
-        Personal: {
-          "Full Name": "John Doe",
-          "Email": "john.doe@example.com",
-          "Phone": "9876543210",
-          "DOB": "1995-05-15",
-          "Gender": "Male"
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      // Provide a mock structure matching the new dynamic format for easy testing
+      currentData = [
+        {
+          id: "mock-1",
+          title: "Personal Info",
+          fields: [
+            { id: "f1", label: "Full Name", value: "John Doe", type: "text" },
+            { id: "f2", label: "Email", value: "john@example.com", type: "email" }
+          ]
         },
-        Identity: {
-          "PAN": "ABCDE1234F",
-          "Aadhaar": "123456789012"
-        },
-        Address: {
-          "Address": "123 ApplyBuddy Street",
-          "City": "Mumbai",
-          "State": "Maharashtra",
-          "Pincode": "400001",
-          "Country": "India"
+        {
+          id: "mock-2",
+          title: "Experience",
+          fields: [
+            { id: "f3", label: "Company", value: "Tech Corp", type: "text" }
+          ]
         }
-      };
+      ];
       
       // Save it back to simulate what the web app would do
       chrome.storage.local.set({ applybuddy_data: currentData });
@@ -41,24 +38,36 @@ document.addEventListener('DOMContentLoaded', () => {
       renderData(currentData);
     }
   });
+  
+  // Listen for changes from background (live sync)
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes.applybuddy_data) {
+      currentData = changes.applybuddy_data.newValue;
+      renderData(currentData);
+    }
+  });
 
   function renderData(data) {
     dataContainer.innerHTML = '';
     
-    // Check if data is nested by section
-    const isNested = Object.values(data).some(val => typeof val === 'object' && val !== null);
-    
-    if (isNested) {
-      for (const [sectionName, sectionData] of Object.entries(data)) {
-        renderSection(sectionName, sectionData);
-      }
+    if (Array.isArray(data)) {
+      data.forEach(section => {
+        renderSection(section.title, section.fields);
+      });
     } else {
-      renderSection("Profile Data", data);
+      // Fallback for old object-based data
+      for (const [key, val] of Object.entries(data)) {
+         if (typeof val === 'object' && val !== null) {
+            // map old object structure to fields array
+            const fieldsArray = Object.entries(val).map(([l, v]) => ({ label: l, value: v, type: 'text' }));
+            renderSection(key, fieldsArray);
+         }
+      }
     }
   }
 
-  function renderSection(title, fields) {
-    if (!fields || Object.keys(fields).length === 0) return;
+  function renderSection(title, fieldsArray) {
+    if (!fieldsArray || fieldsArray.length === 0) return;
     
     const sectionEl = document.createElement('div');
     sectionEl.className = 'section';
@@ -68,9 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
     titleEl.textContent = title;
     sectionEl.appendChild(titleEl);
     
-    for (const [key, value] of Object.entries(fields)) {
-      if (typeof value === 'object') continue; // Skip deeply nested objects for now
-      
+    fieldsArray.forEach(field => {
+      // Skip file data URLs as they're too large and not useful to copy directly
+      if (field.type === 'file' || (field.value && typeof field.value === 'string' && field.value.startsWith('data:'))) {
+         return; 
+      }
+        
       const rowEl = document.createElement('div');
       rowEl.className = 'field-row';
       
@@ -79,11 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const labelEl = document.createElement('div');
       labelEl.className = 'field-label';
-      labelEl.textContent = key;
+      labelEl.textContent = field.label;
       
       const valueEl = document.createElement('div');
       valueEl.className = 'field-value';
-      valueEl.textContent = value;
+      valueEl.textContent = field.value || '';
       
       infoEl.appendChild(labelEl);
       infoEl.appendChild(valueEl);
@@ -92,7 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
       copyBtn.className = 'copy-btn';
       copyBtn.textContent = 'Copy';
       copyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(value.toString()).then(() => {
+        if (!field.value) return;
+        navigator.clipboard.writeText(field.value.toString()).then(() => {
           copyBtn.textContent = 'Copied';
           copyBtn.classList.add('copied');
           setTimeout(() => {
@@ -106,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
       rowEl.appendChild(copyBtn);
       
       sectionEl.appendChild(rowEl);
-    }
+    });
     
     dataContainer.appendChild(sectionEl);
   }

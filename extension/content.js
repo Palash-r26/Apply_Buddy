@@ -23,15 +23,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     // Flatten data to lowercase keys and strip spaces for easier matching
     const flatData = {};
-    const processData = (obj) => {
-      for (const key in obj) {
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-          processData(obj[key]);
-        } else {
-          // Normalize key: lower case and remove spaces (e.g. "Full Name" -> "fullname")
-          const normalKey = key.toLowerCase().replace(/\s+/g, '');
-          flatData[normalKey] = obj[key];
-        }
+    const processData = (incomingData) => {
+      if (Array.isArray(incomingData)) {
+        // New array-based schema from dynamic section builder
+        incomingData.forEach(section => {
+          if (Array.isArray(section.fields)) {
+            section.fields.forEach(field => {
+              if (field.label && field.value && field.type !== 'file') {
+                const normalKey = field.label.toLowerCase().replace(/\s+/g, '');
+                flatData[normalKey] = field.value;
+              }
+            });
+          }
+        });
+      } else {
+        // Fallback for old object-based schema
+        const extract = (obj) => {
+          for (const key in obj) {
+            if (typeof obj[key] === 'object' && obj[key] !== null) {
+              extract(obj[key]);
+            } else {
+              const normalKey = key.toLowerCase().replace(/\s+/g, '');
+              flatData[normalKey] = obj[key];
+            }
+          }
+        };
+        extract(incomingData);
       }
     };
     processData(data);

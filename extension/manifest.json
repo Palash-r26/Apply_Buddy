@@ -23,6 +23,10 @@
   },
   "content_scripts": [
     {
+      "matches": ["http://localhost:*/*", "https://*.palashrai.me/*", "https://palashrai.me/*"],
+      "js": ["sync.js"]
+    },
+    {
       "matches": ["<all_urls>"],
       "js": ["content.js"]
     }
