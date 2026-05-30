@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://apply-buddy.onrender.com' : '');
+const isLocalDev = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_BASE = isLocalDev ? '' : 'https://apply-buddy.onrender.com';
 
 export function apiFetch(path, options = {}) {
   return fetch(`${API_BASE}${path}`, {

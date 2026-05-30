@@ -164,15 +164,20 @@ export function useProfile() {
       const res = await apiFetch('/api/profile');
 
       if (res.ok) {
-        const serverData = await res.json();
-        if (Array.isArray(serverData) && serverData.length > 0) {
-          setData(serverData);
-          localStorage.setItem('applybuddy_data', JSON.stringify(serverData));
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const serverData = await res.json();
+          if (Array.isArray(serverData) && serverData.length > 0) {
+            setData(serverData);
+            localStorage.setItem('applybuddy_data', JSON.stringify(serverData));
+          } else {
+            // Server has no data — push the local/default data to server
+            const localData = loadCachedData();
+            setData(localData);
+            syncToBackend(localData);
+          }
         } else {
-          // Server has no data — push the local/default data to server
-          const localData = loadCachedData();
-          setData(localData);
-          syncToBackend(localData);
+          throw new Error('Backend returned a non-JSON response');
         }
       }
     } catch (err) {
