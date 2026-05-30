@@ -11,6 +11,7 @@ import PublicLayout from './components/PublicLayout';
 import Landing from './components/Landing';
 import About from './components/About';
 import Developers from './components/Developers';
+import { apiFetch } from './api.js';
 
 function App() {
   // Auth state - start null so we know we're checking
@@ -64,7 +65,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await apiFetch('/api/auth/logout', { method: 'POST' });
     } catch (err) {
       console.error('Logout failed:', err);
     }

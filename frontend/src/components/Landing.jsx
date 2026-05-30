@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Database, Globe, Zap, Shield, Mail, Lock, EyeOff, Eye, User } from 'lucide-react';
+import { apiFetch } from '../api.js';
 
 const API_BASE = '/api/auth';
 
@@ -58,7 +59,7 @@ export default function Landing({ onAuth }) {
         ? { username: username.trim(), email: email.trim(), password }
         : { email: email.trim(), password };
 
-      const res = await fetch(`${API_BASE}${endpoint}`, {
+      const res = await apiFetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyPayload)

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiFetch } from '../api.js';
 
 const API_BASE = '/api/auth';
 
@@ -47,7 +48,7 @@ export default function AuthScreen({ onAuth }) {
 
     try {
       const endpoint = mode === 'login' ? '/login' : '/register';
-      const res = await fetch(`${API_BASE}${endpoint}`, {
+      const res = await apiFetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username.trim(), password })

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { apiFetch } from './api.js';
 
 const INITIAL_DATA = [
   {
@@ -105,7 +106,7 @@ export function useProfile() {
   const showErrorToast = useCallback(() => triggerToast('Sync failed — data saved locally', true), [triggerToast]);
 
   // Sync data to backend API
-  const syncToBackend = useCallback((newData, retry = false) => {
+  const syncToBackend = useCallback(function syncToBackendImpl(newData, retry = false) {
     // If not authenticated, the request will fail with 401, but we still try
     // If not authenticated, the request will fail with 401, but we still try
     // App.jsx will handle redirecting unauthenticated users
@@ -113,7 +114,7 @@ export function useProfile() {
 
     syncTimeoutRef.current = setTimeout(async () => {
       try {
-        const res = await fetch('/api/profile', {
+        const res = await apiFetch('/api/profile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // No Authorization header needed, httpOnly cookie handles it
@@ -131,7 +132,7 @@ export function useProfile() {
         if (!retry) {
           // Retry once after 3 seconds
           setTimeout(() => {
-            syncToBackend(newData, true);
+            syncToBackendImpl(newData, true);
           }, 3000);
         }
       }
@@ -160,7 +161,7 @@ export function useProfile() {
   const loadFromBackend = useCallback(async () => {
     setIsLoaded(true);
     try {
-      const res = await fetch('/api/profile'); // credentials are sent via cookies automatically by Vite proxy
+      const res = await apiFetch('/api/profile');
 
       if (res.ok) {
         const serverData = await res.json();

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Lock, Settings } from 'lucide-react';
+import { apiFetch } from '../api.js';
 
 export default function SettingsModal({ isOpen, onClose, user, onUpdateUser, showToast }) {
   const [username, setUsername] = useState('');
@@ -52,7 +53,7 @@ export default function SettingsModal({ isOpen, onClose, user, onUpdateUser, sho
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/profile', {
+      const res = await apiFetch('/api/auth/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

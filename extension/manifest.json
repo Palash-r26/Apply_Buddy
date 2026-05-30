@@ -27,7 +27,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["http://localhost:*/*", "https://*.palashrai.me/*", "https://palashrai.me/*"],
+      "matches": ["http://localhost:*/*", "https://*.palashrai.me/*", "https://palashrai.me/*", "https://applybuddy-palash.vercel.app/*"],
       "js": ["sync.js"]
     },
     {
