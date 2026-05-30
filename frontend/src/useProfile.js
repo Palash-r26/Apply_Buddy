@@ -5,48 +5,48 @@ const INITIAL_DATA = [
     id: crypto.randomUUID(),
     title: 'Personal Info',
     fields: [
-      { id: crypto.randomUUID(), label: 'Full Name', value: 'Palash Rai', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Email', value: 'palashr2612@gmail.com', type: 'email' },
-      { id: crypto.randomUUID(), label: 'Phone', value: '+91 9876543210', type: 'tel' },
-      { id: crypto.randomUUID(), label: 'Location', value: 'Gwalior, Madhya Pradesh', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Pincode', value: '474005', type: 'number' }
+      { id: crypto.randomUUID(), label: 'Full Name', value: 'Alex Developer', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Email', value: 'alex@example.com', type: 'email' },
+      { id: crypto.randomUUID(), label: 'Phone', value: '+1 234 567 8900', type: 'tel' },
+      { id: crypto.randomUUID(), label: 'Location', value: 'San Francisco, CA', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Pincode', value: '94105', type: 'number' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Links',
     fields: [
-      { id: crypto.randomUUID(), label: 'Portfolio', value: 'https://palashrai.me/', type: 'text' },
-      { id: crypto.randomUUID(), label: 'LinkedIn', value: 'https://linkedin.com/in/palash-rai2612', type: 'text' },
-      { id: crypto.randomUUID(), label: 'GitHub', value: 'https://github.com/Palash-r26', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Portfolio', value: 'https://alexdev.me/', type: 'text' },
+      { id: crypto.randomUUID(), label: 'LinkedIn', value: 'https://linkedin.com/in/alex-developer', type: 'text' },
+      { id: crypto.randomUUID(), label: 'GitHub', value: 'https://github.com/alex-dev', type: 'text' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Education',
     fields: [
-      { id: crypto.randomUUID(), label: 'B.Tech College', value: 'Madhav Institute of Technology & Science', type: 'text' },
-      { id: crypto.randomUUID(), label: 'B.Tech Degree', value: 'Computer Science & Design', type: 'text' },
-      { id: crypto.randomUUID(), label: 'B.Tech CGPA', value: '8.88', type: 'text' },
-      { id: crypto.randomUUID(), label: 'B.Tech Duration', value: '2024 - 2028', type: 'text' }
+      { id: crypto.randomUUID(), label: 'B.Tech College', value: 'University of Technology', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech Degree', value: 'Computer Science', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech CGPA', value: '3.8', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech Duration', value: '2020 - 2024', type: 'text' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Experience',
     fields: [
-      { id: crypto.randomUUID(), label: 'Role', value: 'Software Developer', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Focus', value: 'Full Stack & AI Integrations', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Role', value: 'Software Engineer', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Focus', value: 'Full Stack Development', type: 'text' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Skills',
     fields: [
-      { id: crypto.randomUUID(), label: 'Languages', value: 'C, C++, JavaScript, TypeScript, Python', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Frontend', value: 'React.js, Node.js, Next.js, HTML5, CSS3', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Languages', value: 'JavaScript, TypeScript, Python', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Frontend', value: 'React.js, Node.js, HTML5, CSS3', type: 'text' },
       { id: crypto.randomUUID(), label: 'Backend', value: 'Node.js, Express.js, PostgreSQL', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Database', value: 'MongoDB, PostgreSQL, Firebase', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Database', value: 'MongoDB, PostgreSQL', type: 'text' }
     ]
   },
   {
