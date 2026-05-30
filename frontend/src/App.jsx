@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useProfile } from './useProfile';
 import Sidebar from './components/Sidebar';
+import SettingsModal from './components/SettingsModal';
 import Toast from './components/Toast';
 import Cursor from './components/Cursor';
 import SectionBlock from './components/SectionBlock';
@@ -27,9 +28,11 @@ function App() {
     updateFieldValue,
     deleteField,
     toast,
-    loadFromBackend
+    loadFromBackend,
+    triggerToast
   } = useProfile();
 
+  const [showSettings, setShowSettings] = useState(false);
   const initialActive = data && data.length > 0 ? data[0].id : '';
   const [activeSection, setActiveSection] = useState(initialActive);
   
@@ -146,6 +149,7 @@ function App() {
         onLogout={handleLogout}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       <div style={{ 
@@ -200,6 +204,13 @@ function App() {
         </div>
       </div>
       <Toast visible={toast.visible} error={toast.error} message={toast.message} />
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        user={user}
+        onUpdateUser={setUser}
+        showToast={({ error, message }) => triggerToast(message, error)}
+      />
     </div>
   );
 

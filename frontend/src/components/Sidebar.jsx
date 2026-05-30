@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 
 export default function Sidebar({
   sections,
@@ -12,7 +12,8 @@ export default function Sidebar({
   user,
   onLogout,
   isCollapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  onOpenSettings
 }) {
   const [showAddInput, setShowAddInput] = useState(false);
   const [sectionTitle, setSectionTitle] = useState('');
@@ -168,11 +169,32 @@ export default function Sidebar({
       </div>
 
       {user && (
-        <div className="sidebar-user">
-          {!isCollapsed && <span className="sidebar-user-name">✦ {user.username}</span>}
-          <button className="sidebar-logout-btn interactive" onClick={onLogout} title="Logout">
-            {isCollapsed ? '✕' : 'Logout'}
-          </button>
+        <div className={`sidebar-user ${isCollapsed ? 'collapsed' : ''}`}>
+          {!isCollapsed ? (
+            <>
+              <span className="sidebar-user-name" title={user.username}>✦ {user.username}</span>
+              <button 
+                className="sidebar-settings-btn interactive" 
+                onClick={onOpenSettings} 
+                title="Settings"
+                style={{ flexShrink: 0 }}
+              >
+                <Settings size={14} />
+              </button>
+              <button className="sidebar-logout-btn interactive" onClick={onLogout} title="Logout">
+                Logout
+              </button>
+            </>
+          ) : (
+            <div className="sidebar-user-collapsed">
+              <button className="sidebar-settings-btn interactive" onClick={onOpenSettings} title="Settings">
+                <Settings size={14} />
+              </button>
+              <button className="sidebar-logout-btn-collapsed interactive" onClick={onLogout} title="Logout">
+                ✕
+              </button>
+            </div>
+          )}
         </div>
       )}
     </motion.div>

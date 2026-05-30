@@ -282,6 +282,7 @@ export function useProfile() {
     updateFieldValue,
     deleteField,
     toast,
-    loadFromBackend
+    loadFromBackend,
+    triggerToast
   };
 }
