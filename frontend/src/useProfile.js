@@ -5,43 +5,43 @@ const INITIAL_DATA = [
     id: crypto.randomUUID(),
     title: 'Personal Info',
     fields: [
-      { id: crypto.randomUUID(), label: 'Full Name', value: 'Palash Rai', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Email', value: 'palashr2612@gmail.com', type: 'email' },
-      { id: crypto.randomUUID(), label: 'Phone', value: '+91 7049261205', type: 'tel' },
-      { id: crypto.randomUUID(), label: 'Location', value: 'City Center, Gwalior', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Pincode', value: '474011', type: 'number' }
+      { id: crypto.randomUUID(), label: 'Full Name', value: 'John Doe', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Email', value: 'john.doe@example.com', type: 'email' },
+      { id: crypto.randomUUID(), label: 'Phone', value: '+1 234 567 8900', type: 'tel' },
+      { id: crypto.randomUUID(), label: 'Location', value: 'New York, NY', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Pincode', value: '10001', type: 'number' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Links',
     fields: [
-      { id: crypto.randomUUID(), label: 'Portfolio', value: 'https://palashrai.me/', type: 'text' },
-      { id: crypto.randomUUID(), label: 'LinkedIn', value: 'https://linkedin.com/in/palash-rai2612', type: 'text' },
-      { id: crypto.randomUUID(), label: 'GitHub', value: 'https://github.com/Palash-r26', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Portfolio', value: 'https://johndoe.com/', type: 'text' },
+      { id: crypto.randomUUID(), label: 'LinkedIn', value: 'https://linkedin.com/in/johndoe', type: 'text' },
+      { id: crypto.randomUUID(), label: 'GitHub', value: 'https://github.com/johndoe', type: 'text' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Education',
     fields: [
-      { id: crypto.randomUUID(), label: 'B.Tech College', value: 'Madhav Institute of Technology & Science, Gwalior (M.P.), INDIA', type: 'text' },
-      { id: crypto.randomUUID(), label: 'B.Tech Degree', value: 'Computer Science and Design', type: 'text' },
-      { id: crypto.randomUUID(), label: 'B.Tech CGPA', value: '8.88', type: 'text' },
-      { id: crypto.randomUUID(), label: 'B.Tech Duration', value: '2024 - 2028', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Class XII School', value: 'RamaKrishna Mission (CBSE), Gwalior', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Class XII Score', value: '83%', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Class X School', value: 'Saraswati Shishu Mandir, Gwalior', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Class X Score', value: '88%', type: 'text' }
+      { id: crypto.randomUUID(), label: 'B.Tech College', value: 'University of Technology', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech Degree', value: 'Computer Science', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech CGPA', value: '3.8', type: 'text' },
+      { id: crypto.randomUUID(), label: 'B.Tech Duration', value: '2020 - 2024', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Class XII School', value: 'High School', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Class XII Score', value: '95%', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Class X School', value: 'Middle School', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Class X Score', value: '98%', type: 'text' }
     ]
   },
   {
     id: crypto.randomUUID(),
     title: 'Experience',
     fields: [
-      { id: crypto.randomUUID(), label: 'Company', value: 'Rise and Peak Technologies', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Role', value: 'Digital Marketing Intern', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Duration', value: 'Jun 2025 - Aug 2025', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Company', value: 'Tech Corp', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Role', value: 'Software Engineer', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Duration', value: '2024 - Present', type: 'text' }
     ]
   },
   {
@@ -66,11 +66,9 @@ const INITIAL_DATA = [
     id: crypto.randomUUID(),
     title: 'Projects',
     fields: [
-      { id: crypto.randomUUID(), label: 'Project 1', value: 'OFP - Offline Fee Portal', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Project 2', value: 'UniTime - AI-Powered Timetable Manager', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Project 3', value: 'Scrollock - Android Productivity App', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Project 4', value: 'Emotion Analyser', type: 'text' },
-      { id: crypto.randomUUID(), label: 'Project 5', value: 'Music Player - VIBE', type: 'text' }
+      { id: crypto.randomUUID(), label: 'Project 1', value: 'Awesome App', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Project 2', value: 'Cool Tool', type: 'text' },
+      { id: crypto.randomUUID(), label: 'Project 3', value: 'Useful Utility', type: 'text' }
     ]
   }
 ];
@@ -81,8 +79,7 @@ const loadCachedData = () => {
     const saved = localStorage.getItem('applybuddy_data');
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Force inject resume data if the user hasn't received it yet, or missing the updated college name, or missing the Documents section
-      if (Array.isArray(parsed) && (!parsed.some(s => s.title === 'Experience') || !parsed.some(s => s.title === 'Education' && s.fields.some(f => f.value === 'Madhav Institute of Technology & Science, Gwalior (M.P.), INDIA')) || parsed.some(s => s.title === 'Address') || !parsed.some(s => s.title === 'Documents'))) {
+      if (Array.isArray(parsed) && (!parsed.some(s => s.title === 'Experience') || !parsed.some(s => s.title === 'Education') || parsed.some(s => s.title === 'Address') || !parsed.some(s => s.title === 'Documents'))) {
         localStorage.setItem('applybuddy_data', JSON.stringify(INITIAL_DATA));
         return INITIAL_DATA;
       }
