@@ -9,8 +9,8 @@ import AuthScreen from './components/AuthScreen';
 
 function App() {
   // Auth state
-  const [user, setUser] = useState(null);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [user, setUser] = useState({ id: 'local-guest', username: 'Guest' });
+  const [isAuthChecking, setIsAuthChecking] = useState(false);
 
   const {
     data,
@@ -42,22 +42,7 @@ function App() {
 
   // Check auth session on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      } catch (err) {
-        setUser(null);
-      } finally {
-        setIsAuthChecking(false);
-      }
-    };
-    checkAuth();
+    // checkAuth temporarily disabled
   }, []);
 
   // Auth handler — called from AuthScreen on successful login/register
