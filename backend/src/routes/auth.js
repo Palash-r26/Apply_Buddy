@@ -3,12 +3,33 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db/pool.js';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 import { authenticateToken } from '../middleware/auth.js';
 
 dotenv.config({ override: true });
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'applybuddy_secret_key';
+
+const isProduction = process.env.NODE_ENV === 'production';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  if (isProduction) {
+    throw new Error('FATAL: JWT_SECRET environment variable is not defined in production!');
+  }
+  console.warn('WARNING: JWT_SECRET environment variable is not defined. Using weak fallback secret for local development.');
+}
+
+const finalSecret = JWT_SECRET || 'applybuddy_secret_key';
+
+// Strictly limit authentications (registration/login) to prevent brute-force attacks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // Max 15 attempts per IP per 15 minutes
+  message: { error: 'Too many authentication attempts. Please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const setTokenCookie = (res, token) => {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -21,7 +42,7 @@ const setTokenCookie = (res, token) => {
 };
 
 // Register User
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
@@ -47,7 +68,7 @@ router.post('/register', async (req, res) => {
     const user = newUser.rows[0];
 
     // Generate JWT token valid for 7 days
-    const token = jwt.sign({ id: user.id, username: user.username, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user.id, username: user.username, email: user.email }, finalSecret, { expiresIn: '7d' });
 
     setTokenCookie(res, token);
 
@@ -62,7 +83,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Login User
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -84,7 +105,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate JWT token valid for 7 days
-    const token = jwt.sign({ id: user.id, username: user.username, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user.id, username: user.username, email: user.email }, finalSecret, { expiresIn: '7d' });
 
     setTokenCookie(res, token);
 
@@ -176,7 +197,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
     // 5. Generate a new JWT token since credentials changed
     const token = jwt.sign(
       { id: updatedUser.id, username: updatedUser.username, email: updatedUser.email },
-      JWT_SECRET,
+      finalSecret,
       { expiresIn: '7d' }
     );
     setTokenCookie(res, token);
