@@ -14,9 +14,12 @@ export async function initDb() {
       );
     `);
 
-    // Add email column if it doesn't exist (for existing databases)
+    // Add email and reset token columns if they don't exist (for existing databases)
     await client.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE;
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE,
+      ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP WITH TIME ZONE;
     `);
 
     // Create profiles table if not exists, containing dynamic JSONB array data

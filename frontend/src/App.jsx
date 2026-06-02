@@ -11,6 +11,7 @@ import PublicLayout from './components/PublicLayout';
 import Landing from './components/Landing';
 import About from './components/About';
 import Developers from './components/Developers';
+import ResetPassword from './components/ResetPassword';
 import { apiFetch } from './api.js';
 
 function App() {
@@ -269,6 +270,7 @@ function App() {
           <Route index element={<Landing onAuth={handleAuth} />} />
           <Route path="about" element={<About />} />
           <Route path="developers" element={<Developers />} />
+          <Route path="reset-password" element={<ResetPassword />} />
         </Route>
         
         <Route path="/vault" element={user ? vaultElement : <Navigate to="/" replace />} />

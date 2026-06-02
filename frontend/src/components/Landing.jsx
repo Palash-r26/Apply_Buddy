@@ -6,7 +6,7 @@ import { apiFetch } from '../api.js';
 const API_BASE = '/api/auth';
 
 export default function Landing({ onAuth }) {
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forgot-password'
 
   const [username,        setUsername]        = useState('');
   const [email,           setEmail]           = useState('');
@@ -16,6 +16,7 @@ export default function Landing({ onAuth }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [error,      setError]      = useState('');
+  const [success,    setSuccess]    = useState('');
   const [loading,    setLoading]    = useState(false);
   const [shakeError, setShakeError] = useState(false);
 
@@ -24,7 +25,7 @@ export default function Landing({ onAuth }) {
   // Reset form on mode switch
   useEffect(() => {
     setUsername(''); setEmail(''); setPassword(''); setConfirmPassword('');
-    setError(''); setShowPassword(false); setShowConfirmPassword(false);
+    setError(''); setSuccess(''); setShowPassword(false); setShowConfirmPassword(false);
     setTimeout(() => firstInputRef.current?.focus(), 50);
   }, [mode]);
 
@@ -37,6 +38,7 @@ export default function Landing({ onAuth }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     if (mode === 'register') {
       if (!username.trim() || !email.trim() || !password || !confirmPassword) {
@@ -51,7 +53,7 @@ export default function Landing({ onAuth }) {
         triggerShake('Passwords do not match');
         return;
       }
-    } else {
+    } else if (mode === 'login') {
       if (!email.trim() || !password) {
         triggerShake('Email and password are required');
         return;
@@ -60,10 +62,32 @@ export default function Landing({ onAuth }) {
         triggerShake('Password must be at least 6 characters');
         return;
       }
+    } else if (mode === 'forgot-password') {
+      if (!email.trim()) {
+        triggerShake('Email is required');
+        return;
+      }
     }
 
     setLoading(true);
     try {
+      if (mode === 'forgot-password') {
+        const res = await apiFetch(`${API_BASE}/forgot-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim() }),
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          triggerShake(data.error || 'Something went wrong');
+        } else {
+          setSuccess(data.message);
+        }
+        setLoading(false);
+        return;
+      }
+
       const endpoint = mode === 'login' ? '/login' : '/register';
       const body = mode === 'register'
         ? { username: username.trim(), email: email.trim(), password }
@@ -150,29 +174,35 @@ export default function Landing({ onAuth }) {
           transition={{ type: 'spring', stiffness: 200, damping: 20 }}
         >
           <img src="/icon.png" alt="ApplyBuddy Logo" className="auth-box-logo" />
-          <h2>Welcome {mode === 'login' ? 'Back' : 'to Vault'}</h2>
+          <h2>
+            {mode === 'login' && 'Welcome Back'}
+            {mode === 'register' && 'Welcome to Vault'}
+            {mode === 'forgot-password' && 'Reset Password'}
+          </h2>
           <p className="auth-box-subtitle">
-            {mode === 'login'
-              ? 'Sign in to access your ApplyBuddy profile.'
-              : 'Create your account to get started.'}
+            {mode === 'login' && 'Sign in to access your ApplyBuddy profile.'}
+            {mode === 'register' && 'Create your account to get started.'}
+            {mode === 'forgot-password' && 'Enter your email to receive a reset link.'}
           </p>
 
-          <div className="auth-toggle">
-            <button
-              type="button"
-              className={mode === 'login' ? 'active' : ''}
-              onClick={() => setMode('login')}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              className={mode === 'register' ? 'active' : ''}
-              onClick={() => setMode('register')}
-            >
-              Create Account
-            </button>
-          </div>
+          {mode !== 'forgot-password' && (
+            <div className="auth-toggle">
+              <button
+                type="button"
+                className={mode === 'login' ? 'active' : ''}
+                onClick={() => setMode('login')}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                className={mode === 'register' ? 'active' : ''}
+                onClick={() => setMode('register')}
+              >
+                Create Account
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="auth-form-clean" noValidate>
 
@@ -221,33 +251,58 @@ export default function Landing({ onAuth }) {
             </div>
 
             {/* Password */}
-            <div className="form-group">
-              <label htmlFor="auth-password">
-                PASSWORD
-                <span className="field-hint">min. 6 characters</span>
-              </label>
-              <div className="input-wrapper">
-                <Lock size={16} className="input-icon" />
-                <input
-                  id="auth-password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  maxLength={128}
-                />
-                <button
-                  type="button"
-                  className="password-toggle interactive"
-                  onClick={() => setShowPassword((p) => !p)}
-                  tabIndex={-1}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+            <AnimatePresence>
+              {mode !== 'forgot-password' && (
+                <motion.div
+                  className="form-group"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  style={{ overflow: 'hidden' }}
                 >
-                  {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
-                </button>
-              </div>
-            </div>
+                  <label htmlFor="auth-password">
+                    PASSWORD
+                    <span className="field-hint">min. 6 characters</span>
+                  </label>
+                  <div className="input-wrapper">
+                    <Lock size={16} className="input-icon" />
+                    <input
+                      id="auth-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                      maxLength={128}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle interactive"
+                      onClick={() => setShowPassword((p) => !p)}
+                      tabIndex={-1}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+                    </button>
+                  </div>
+                  {mode === 'login' && (
+                    <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setMode('forgot-password')}
+                        style={{
+                          background: 'none', border: 'none',
+                          color: 'var(--text-secondary)', fontSize: '0.85rem',
+                          cursor: 'pointer', textDecoration: 'underline'
+                        }}
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Confirm Password — register only */}
             <AnimatePresence>
@@ -302,6 +357,23 @@ export default function Landing({ onAuth }) {
                   {error}
                 </motion.div>
               )}
+              {success && (
+                <motion.div
+                  style={{
+                    backgroundColor: '#d4edda',
+                    color: '#155724',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                    marginBottom: '16px'
+                  }}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                >
+                  {success}
+                </motion.div>
+              )}
             </AnimatePresence>
 
             <button
@@ -311,8 +383,24 @@ export default function Landing({ onAuth }) {
             >
               {loading
                 ? 'Please wait…'
-                : mode === 'login' ? 'Sign In →' : 'Create Account →'}
+                : mode === 'login' ? 'Sign In →' : mode === 'register' ? 'Create Account →' : 'Send Reset Link'}
             </button>
+            
+            {mode === 'forgot-password' && (
+              <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => setMode('login')}
+                  style={{
+                    background: 'none', border: 'none',
+                    color: 'var(--text-secondary)', fontSize: '0.9rem',
+                    cursor: 'pointer', textDecoration: 'underline'
+                  }}
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            )}
           </form>
         </motion.div>
       </div>

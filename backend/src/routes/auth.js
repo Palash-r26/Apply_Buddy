@@ -1,7 +1,9 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { pool } from '../db/pool.js';
+import { sendPasswordResetEmail } from '../utils/email.js';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import { authenticateToken } from '../middleware/auth.js';
@@ -207,7 +209,91 @@ router.put('/profile', authenticateToken, async (req, res) => {
       user: { id: updatedUser.id, username: updatedUser.username, email: updatedUser.email }
     });
   } catch (err) {
-    console.error('Error updating profile:', err);
+    console.error('Update profile error:', err);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// Forgot Password Request
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = userResult.rows[0];
+
+    // Even if user doesn't exist, we send a success response to prevent email enumeration
+    if (!user) {
+      return res.json({ message: 'If an account with that email exists, a reset link has been sent.' });
+    }
+
+    // Generate token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+    // Save token to DB
+    await pool.query(
+      'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3',
+      [resetToken, tokenExpiry, user.id]
+    );
+
+    // Send email
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+    
+    const emailSent = await sendPasswordResetEmail(user.email, resetUrl);
+    
+    if (!emailSent) {
+      return res.status(500).json({ error: 'Failed to send reset email. Please try again later.' });
+    }
+
+    res.json({ message: 'If an account with that email exists, a reset link has been sent.' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Reset Password
+router.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token and new password are required' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  }
+
+  try {
+    // Find user by token and ensure token is not expired
+    const userResult = await pool.query(
+      'SELECT * FROM users WHERE reset_token = $1 AND reset_token_expiry > CURRENT_TIMESTAMP',
+      [token]
+    );
+    
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password and clear reset token
+    await pool.query(
+      'UPDATE users SET password = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2',
+      [hashedPassword, user.id]
+    );
+
+    res.json({ message: 'Password has been successfully reset. You can now log in.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
