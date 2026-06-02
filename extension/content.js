@@ -7,19 +7,34 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const inputs = document.querySelectorAll("input, textarea, select");
 
     const aliasMap = {
-      "fullname": ["name", "full name", "fullname"],
-      "email": ["email", "e-mail", "mail"],
-      "phone": ["phone", "mobile", "contact"],
-      "dob": ["dob", "date of birth"],
-      "gender": ["gender"],
-      "pan": ["pan"],
-      "aadhaar": ["aadhaar", "aadhar", "uid"],
-      "address": ["address"],
-      "city": ["city", "town"],
-      "state": ["state"],
-      "pincode": ["pin", "pincode", "zip", "postal"],
-      "country": ["country"],
-      "username": ["username", "user"]
+      "fullname": ["fullname", "full name", "name", "first name", "last name", "given name", "family name", "applicant name", "candidate name", "student name"],
+      "email": ["email", "e-mail", "mail", "email address", "contact email", "email id", "email-id", "mail id", "mail-id", "emailid", "mailid"],
+      "phone": ["phone", "mobile", "contact number", "telephone", "cell", "phone number", "contact", "no.", "no", "number", "ph no", "mob no"],
+      "dob": ["dob", "date of birth", "birth date", "birthday"],
+      "gender": ["gender", "sex", "pronoun"],
+      "pan": ["pan", "pan card", "pan number"],
+      "aadhaar": ["aadhaar", "aadhar", "uid", "uidai", "aadhaar number", "aadhar number"],
+      "address": ["address", "street", "location", "current address", "permanent address", "residential address"],
+      "city": ["city", "town", "district"],
+      "state": ["state", "province"],
+      "pincode": ["pin", "pincode", "zip", "postal", "zip code", "zipcode", "postal code"],
+      "country": ["country", "nation"],
+      "username": ["username", "user id", "userid", "user"],
+      
+      // Additional Massive Job/College fields
+      "college": ["college", "university", "institute", "institution", "school", "education", "degree from", "graduated from", "institution name", "college name", "university name"],
+      "branch": ["branch", "major", "field of study", "specialization", "course", "program", "discipline", "department", "stream"],
+      "degree": ["degree", "qualification", "level of education", "graduation", "highest degree", "educational qualification", "highest qualification"],
+      "cgpa": ["cgpa", "gpa", "percentage", "score", "grade", "marks", "aggregate"],
+      "experience": ["experience", "total experience", "years of experience", "work experience", "total work experience", "past experience"],
+      "company": ["company", "current company", "employer", "organization", "current organization", "past company", "company name"],
+      "linkedin": ["linkedin", "linkedin url", "linkedin profile", "linked in"],
+      "github": ["github", "github url", "github profile", "git hub", "git"],
+      "portfolio": ["portfolio", "website", "personal website", "link", "personal link", "portfolio url"],
+      "resume": ["resume", "cv", "curriculum vitae", "upload resume", "upload cv"],
+      "coverletter": ["cover letter", "coverletter", "covering letter"],
+      "ctc": ["ctc", "current ctc", "expected ctc", "salary", "expected salary", "current salary", "compensation", "annual salary"],
+      "noticeperiod": ["notice period", "notice", "joining time", "available to join", "availability"]
     };
 
     const normalizeText = (value) => (value || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -66,31 +81,66 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (!leftTokens.length || !rightTokens.length) return 0;
       const rightSet = new Set(rightTokens);
       const overlap = leftTokens.filter(token => rightSet.has(token)).length;
-      return overlap / leftTokens.length;
+      return overlap / Math.max(leftTokens.length, rightTokens.length);
     };
 
     const findValueForField = (fieldText) => {
-      if (!fieldText) return null;
-      const text = fieldText.toLowerCase();
-      const normalizedText = normalizeText(text);
-      const textTokens = tokenize(text);
-
-      // 1) Alias-based quick matching.
+      if (!fieldText || fieldText.trim() === '') return null;
       
+      const text = fieldText.toLowerCase();
+      // Remove generic filler words for better matching
+      const cleanedText = text.replace(/\b(enter|your|please|provide|the|a|an)\b/g, ' ').trim();
+      
+      const normalizedText = normalizeText(cleanedText);
+      const textTokens = tokenize(cleanedText);
+
+      if (!normalizedText) return null;
+
+      // 1) Alias-based strict matching
+      let bestAliasScore = 0;
+      let bestAliasKey = null;
+
       for (const [dataKey, aliases] of Object.entries(aliasMap)) {
-        if (aliases.some(alias => text.includes(alias))) {
-          // Check if we have this key mapped in our flatData
-          if (flatData[dataKey]) return flatData[dataKey];
+        for (const alias of aliases) {
+          const normalizedAlias = normalizeText(alias);
+          const aliasTokens = tokenize(alias);
           
-          // Also try direct aliases in flatData
-          for (const alias of aliases) {
-             const normalizedAlias = normalizeText(alias);
-             if (flatData[normalizedAlias]) return flatData[normalizedAlias];
+          // Exact match
+          if (normalizedText === normalizedAlias || textTokens.join(' ') === aliasTokens.join(' ')) {
+             bestAliasScore = 1;
+             bestAliasKey = dataKey;
+             break;
+          }
+
+          // Very strong inclusion match (e.g. "enter your college name" includes "college name")
+          if (cleanedText.includes(alias) || textTokens.join(' ').includes(aliasTokens.join(' '))) {
+            const score = aliasTokens.length / textTokens.length;
+            // Only accept if the alias forms a significant part of the field text (at least 30%)
+            // and the alias isn't too short (like "no" for phone) unless it's a very exact match.
+            if (score > bestAliasScore && (aliasTokens.length > 1 || alias.length > 3 || score > 0.8)) {
+               bestAliasScore = score;
+               bestAliasKey = dataKey;
+            }
           }
         }
+        if (bestAliasScore === 1) break;
       }
 
-      // 2) Direct + fuzzy matching against any stored profile key.
+      if (bestAliasKey) {
+         // Prioritize the standardized category key if available in user's profile
+         if (flatData[bestAliasKey]) return flatData[bestAliasKey];
+         
+         // Try checking if any user key maps to this alias
+         for (const [userKey, userValue] of Object.entries(flatData)) {
+            const userKeyNormalized = normalizeText(userKey);
+            if (aliasMap[bestAliasKey].some(a => normalizeText(a) === userKeyNormalized || userKeyNormalized.includes(normalizeText(a)))) {
+               return userValue;
+            }
+         }
+      }
+
+      // 2) Direct token overlap matching against user's stored custom profile keys.
+      // E.g., user created a field called "Father's Name" and form asks for "Father Name"
       let bestKey = null;
       let bestScore = 0;
 
@@ -98,24 +148,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const keyNorm = normalizeText(key);
         if (!keyNorm) continue;
 
-        if (normalizedText.includes(keyNorm) || keyNorm.includes(normalizedText)) {
-          const score = Math.min(keyNorm.length, normalizedText.length) / Math.max(keyNorm.length, normalizedText.length);
-          if (score > bestScore) {
-            bestScore = score;
-            bestKey = key;
-          }
+        // Exact match
+        if (keyNorm === normalizedText) {
+          return flatData[key];
         }
 
-        const keyTokens = tokenize(keyNorm);
+        const keyTokens = tokenize(key);
         const overlapScore = scoreTokenOverlap(keyTokens, textTokens);
-        if (overlapScore > bestScore) {
+        
+        // Strict threshold to prevent short values (like name) from matching unrelated fields
+        if (overlapScore > bestScore && overlapScore > 0.6) {
           bestScore = overlapScore;
           bestKey = key;
         }
       }
 
-      // Accept if at least half of the field name meaning matches.
-      if (bestKey && bestScore >= 0.5) {
+      if (bestKey) {
         return flatData[bestKey];
       }
 
