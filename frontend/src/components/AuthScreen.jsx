@@ -7,6 +7,7 @@ const API_BASE = '/api/auth';
 export default function AuthScreen({ onAuth }) {
   const [mode, setMode] = useState('login'); // 'login' or 'register'
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -29,8 +30,13 @@ export default function AuthScreen({ onAuth }) {
     e.preventDefault();
     setError('');
 
-    if (!username.trim() || !password.trim()) {
-      triggerShake('Username and password are required');
+    if (mode === 'login' && (!email.trim() || !password.trim())) {
+      triggerShake('Email and password are required');
+      return;
+    }
+
+    if (mode === 'register' && (!username.trim() || !email.trim() || !password.trim())) {
+      triggerShake('Username, email, and password are required');
       return;
     }
 
@@ -48,10 +54,14 @@ export default function AuthScreen({ onAuth }) {
 
     try {
       const endpoint = mode === 'login' ? '/login' : '/register';
+      const bodyData = mode === 'login' 
+        ? { email: email.trim(), password }
+        : { username: username.trim(), email: email.trim(), password };
+
       const res = await apiFetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password })
+        body: JSON.stringify(bodyData)
       });
 
       const data = await res.json();
@@ -135,16 +145,39 @@ export default function AuthScreen({ onAuth }) {
             exit={{ x: mode === 'login' ? 20 : -20, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
+            <AnimatePresence>
+              {mode === 'register' && (
+                <motion.div
+                  className="auth-field"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <label className="auth-label">Username</label>
+                  <input
+                    ref={usernameRef}
+                    type="text"
+                    className="auth-input interactive"
+                    placeholder="Enter username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoComplete="username"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="auth-field">
-              <label className="auth-label">Username</label>
+              <label className="auth-label">Email</label>
               <input
-                ref={usernameRef}
-                type="text"
+                type="email"
                 className="auth-input interactive"
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
+                placeholder="Enter email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                ref={mode === 'login' ? usernameRef : null}
               />
             </div>
 
