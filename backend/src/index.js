@@ -24,17 +24,17 @@ if (isProduction) {
 const allowedOrigins = [
   'https://applybuddy.palashrai.me',
   'https://applybuddy-palash.vercel.app',
-  'https://palashrai.me'
+
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like server-to-server, postman/curl, or browser extensions in some scenarios)
     if (!origin) return callback(null, true);
-    
+
     // Check if it is local development or chrome extension
-    const isLocalOrExtension = 
-      origin.startsWith('http://localhost:') || 
+    const isLocalOrExtension =
+      origin.startsWith('http://localhost:') ||
       origin.startsWith('http://127.0.0.1:') ||
       origin.startsWith('chrome-extension://');
 
@@ -62,12 +62,12 @@ app.get('/health', (req, res) => {
 // Global error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled server error:', err);
-  
+
   const status = err.status || 500;
   const message = (isProduction && status === 500)
     ? 'Internal server error'
     : err.message;
-    
+
   res.status(status).json({ error: message });
 });
 
