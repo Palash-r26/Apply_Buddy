@@ -53,7 +53,7 @@ router.post('/register', authLimiter, async (req, res) => {
 
   try {
     // Check if user already exists
-    const userCheck = await pool.query('SELECT * FROM users WHERE username = $1 OR email = $2', [username, email]);
+    const userCheck = await pool.query('SELECT * FROM users WHERE name = $1 OR email = $2', [username, email]);
     if (userCheck.rows.length > 0) {
       return res.status(400).json({ error: 'Username or email already exists' });
     }
@@ -63,7 +63,7 @@ router.post('/register', authLimiter, async (req, res) => {
 
     // Insert user and fetch returned id and username
     const newUser = await pool.query(
-      'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email',
+      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name as username, email',
       [username, email, hashedPassword]
     );
 
@@ -94,7 +94,7 @@ router.post('/login', authLimiter, async (req, res) => {
 
   try {
     // Check for user credentials by email
-    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const userResult = await pool.query('SELECT id, name as username, email, password_hash as password FROM users WHERE email = $1', [email]);
     if (userResult.rows.length === 0) {
       return res.status(400).json({ error: 'Invalid email or password' });
     }
@@ -148,7 +148,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
   try {
     // 1. Fetch user from database
-    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    const userResult = await pool.query('SELECT id, name as username, email, password_hash as password FROM users WHERE id = $1', [userId]);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -167,7 +167,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
     // Check if username already taken if changing
     if (username && username !== user.username) {
-      const usernameCheck = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+      const usernameCheck = await pool.query('SELECT * FROM users WHERE name = $1', [username]);
       if (usernameCheck.rows.length > 0) {
         return res.status(400).json({ error: 'Username already exists' });
       }
@@ -190,7 +190,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
     // 4. Perform update query
     const updateResult = await pool.query(
-      'UPDATE users SET username = $1, email = $2, password = $3 WHERE id = $4 RETURNING id, username, email',
+      'UPDATE users SET name = $1, email = $2, password_hash = $3 WHERE id = $4 RETURNING id, name as username, email',
       [updatedUsername, updatedEmail, updatedPasswordHash, userId]
     );
 
@@ -287,7 +287,7 @@ router.post('/reset-password', async (req, res) => {
 
     // Update password and clear reset token
     await pool.query(
-      'UPDATE users SET password = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2',
+      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2',
       [hashedPassword, user.id]
     );
 

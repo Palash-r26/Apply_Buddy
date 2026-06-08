@@ -8,8 +8,12 @@ const pool = new Pool({
 
 async function test() {
   try {
-    const res = await pool.query('SELECT * FROM users LIMIT 1');
-    console.log('Columns:', res.fields.map(f => f.name));
+    const res = await pool.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'users';
+    `);
+    console.log(res.rows);
   } catch (err) {
     console.error('Database Error:', err);
   } finally {
