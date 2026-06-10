@@ -13,3 +13,9 @@ export const pool = new Pool({
     rejectUnauthorized: false
   }
 });
+
+// Global error handling for the pool
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle DB client', err);
+  // process.exit(-1); // optional: exit process if needed
+});

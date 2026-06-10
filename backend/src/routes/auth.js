@@ -79,7 +79,7 @@ router.post('/register', authLimiter, async (req, res) => {
       user: { id: user.id, username: user.username, email: user.email }
     });
   } catch (err) {
-    console.error('Error during registration:', err);
+    console.error('Error during registration (user:', req.body.email || req.body.username, '):', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -116,7 +116,7 @@ router.post('/login', authLimiter, async (req, res) => {
       user: { id: user.id, username: user.username, email: user.email }
     });
   } catch (err) {
-    console.error('Error during login:', err);
+    console.error('Error during login (email:', req.body.email, '):', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -209,7 +209,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
       user: { id: updatedUser.id, username: updatedUser.username, email: updatedUser.email }
     });
   } catch (err) {
-    console.error('Update profile error:', err);
+    console.error('Update profile error (userId:', req.user.id, '):', err);
     res.status(500).json({ error: 'Failed to update profile' });
   }
 });
