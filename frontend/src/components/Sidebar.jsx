@@ -108,6 +108,42 @@ export default function Sidebar({
       </div>
 
       <ul className="nav-links">
+        <li>
+          <a
+            href="#sandbox"
+            className={`nav-link interactive nav-link-sandbox ${activeSection === 'sandbox' ? 'active' : ''} ${effectivelyCollapsed ? 'nav-link-collapsed' : ''}`}
+            title={effectivelyCollapsed ? "Autofill Sandbox" : undefined}
+            onClick={(e) => {
+              e.preventDefault();
+              onLinkClick('sandbox');
+              if (onMobileClose) onMobileClose();
+            }}
+            style={{
+              borderLeft: activeSection === 'sandbox' ? '3px solid var(--accent)' : '3px solid transparent',
+              paddingLeft: effectivelyCollapsed ? '0' : '21px',
+              color: activeSection === 'sandbox' ? 'var(--accent)' : 'inherit'
+            }}
+          >
+            {effectivelyCollapsed ? (
+              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>🧪</span>
+            ) : (
+              <>
+                {activeSection === 'sandbox' && (
+                  <motion.div
+                    layoutId="active-dot"
+                    className="nav-dot"
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                  />
+                )}
+                <span className="sandbox-nav-label" style={{ fontWeight: 650 }}>🧪 Sandbox Lab</span>
+              </>
+            )}
+          </a>
+        </li>
+        <li className="sidebar-divider-li" style={{ padding: '4px 16px', opacity: 0.15 }}>
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '4px 0' }} />
+        </li>
+
         {sections.map((section) => {
           const isActive = activeSection === section.id;
           return (

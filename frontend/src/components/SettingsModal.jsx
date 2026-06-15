@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Mail, Lock, Settings } from 'lucide-react';
+import { X, User, Mail, Lock, Settings, Download, Upload, FileJson } from 'lucide-react';
 import { apiFetch } from '../api.js';
 
 export default function SettingsModal({ isOpen, onClose, user, onUpdateUser, showToast }) {
@@ -12,6 +12,102 @@ export default function SettingsModal({ isOpen, onClose, user, onUpdateUser, sho
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [shakeError, setShakeError] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleImportFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleExport = () => {
+    try {
+      const storageKey = user && user.username ? `applybuddy_data_${user.username}` : 'applybuddy_data';
+      const rawData = localStorage.getItem(storageKey);
+      if (!rawData) {
+        showToast({ error: true, message: 'No profile data found to export.' });
+        return;
+      }
+      
+      const blob = new Blob([rawData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `applybuddy_profile_${user?.username || 'local'}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      showToast({ error: false, message: 'Profile exported successfully!' });
+    } catch (err) {
+      showToast({ error: true, message: 'Failed to export profile.' });
+    }
+  };
+
+  const handleImportFile = (file) => {
+    if (!file) return;
+    
+    if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
+      showToast({ error: true, message: 'Please upload a valid JSON file.' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        
+        // Validation logic
+        if (!Array.isArray(parsed)) {
+          throw new Error('Data must be a sections array.');
+        }
+
+        for (const section of parsed) {
+          if (!section.id || !section.title || !Array.isArray(section.fields)) {
+            throw new Error('Invalid section structure. Must contain id, title, and fields.');
+          }
+          for (const field of section.fields) {
+            if (!field.id || !field.label || field.value === undefined) {
+              throw new Error('Invalid field structure inside sections.');
+            }
+          }
+        }
+
+        const storageKey = user && user.username ? `applybuddy_data_${user.username}` : 'applybuddy_data';
+        
+        // Save to storage
+        localStorage.setItem(storageKey, JSON.stringify(parsed));
+        localStorage.setItem('applybuddy_data', JSON.stringify(parsed));
+        
+        // Notify of changes to extension
+        window.postMessage({ type: 'APPLYBUDDY_LOCAL_UPDATE' }, '*');
+
+        showToast({ error: false, message: 'Profile imported successfully! Reloading...' });
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+
+      } catch (err) {
+        showToast({ error: true, message: `Import failed: ${err.message}` });
+      }
+    };
+    reader.readAsText(file);
+  };
 
   // Sync state with user details when modal opens
   useEffect(() => {
@@ -169,6 +265,67 @@ export default function SettingsModal({ isOpen, onClose, user, onUpdateUser, sho
                   />
                 </div>
               )}
+
+              <hr className="modal-divider" />
+
+              <div className="portability-section" style={{ padding: '4px 0 12px' }}>
+                <h3 className="settings-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', margin: '0 0 6px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  <FileJson size={14} className="field-icon" style={{ color: 'var(--accent)' }} /> Vault Portability
+                </h3>
+                <p className="settings-section-desc" style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.4 }}>
+                  Export your dynamic sections and fields to a backup JSON file or import them from a previous backup.
+                </p>
+                
+                <div className="portability-buttons">
+                  <button
+                    type="button"
+                    className="btn-secondary portability-btn interactive"
+                    onClick={handleExport}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', width: '100%', marginBottom: '12px', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 500, fontSize: '12px' }}
+                  >
+                    <Download size={14} /> Export Backup JSON
+                  </button>
+                  
+                  <div 
+                    className={`import-dropzone ${dragActive ? "drag-active" : ""}`}
+                    onDragEnter={handleDrag}
+                    onDragOver={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDrop={handleDrop}
+                    style={{
+                      border: '2px dashed var(--border)',
+                      borderRadius: '6px',
+                      padding: '16px',
+                      textAlign: 'center',
+                      fontSize: '11px',
+                      color: 'var(--text-secondary)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '8px',
+                      backgroundColor: dragActive ? 'var(--accent-dim)' : 'transparent',
+                      borderColor: dragActive ? 'var(--accent)' : 'var(--border)',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <Upload size={16} className="dropzone-icon" style={{ color: 'var(--text-secondary)' }} />
+                    <span>Drag & drop backup JSON here or </span>
+                    <label className="import-label interactive" style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}>
+                      Browse Files
+                      <input 
+                        type="file" 
+                        accept=".json" 
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleImportFile(e.target.files[0]);
+                          }
+                        }} 
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
 
               <hr className="modal-divider" />
 

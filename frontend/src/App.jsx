@@ -12,6 +12,7 @@ import Landing from './components/Landing';
 import About from './components/About';
 import Developers from './components/Developers';
 import ResetPassword from './components/ResetPassword';
+import SandboxLab from './components/SandboxLab';
 import { apiFetch } from './api.js';
 
 function App() {
@@ -188,7 +189,9 @@ function App() {
         </button>
 
         <div className="content-inner">
-          {data && data.length > 0 ? (
+          {activeSection === 'sandbox' ? (
+            <SandboxLab data={data} />
+          ) : data && data.length > 0 ? (
             <motion.div
               variants={{
                 hidden: { opacity: 0 },
