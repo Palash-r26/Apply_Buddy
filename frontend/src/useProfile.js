@@ -179,10 +179,25 @@ export function useProfile(user) {
   const showSuccessToast = useCallback(() => triggerToast('✦ saved', false), [triggerToast]);
   const showErrorToast = useCallback(() => triggerToast('Sync failed — data saved locally', true), [triggerToast]);
 
-  // Sync data to backend API (Disabled to preserve user privacy and data security)
-  const syncToBackend = useCallback(function syncToBackendImpl(newData, retry = false) {
-    // No-op: Data is kept strictly client-side in localStorage for privacy and security.
-  }, []);
+  // Sync data to backend API
+  const syncToBackend = useCallback(async (newData) => {
+    if (!user) return;
+    try {
+      const response = await apiFetch('/api/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ data: newData })
+      });
+      if (!response.ok) {
+        throw new Error('Backend sync failed');
+      }
+    } catch (err) {
+      console.error('Error syncing profile to backend:', err);
+      showErrorToast();
+    }
+  }, [user, showErrorToast]);
 
   // Immediate save — localStorage + toast
   const saveImmediate = useCallback((newData) => {
@@ -195,9 +210,14 @@ export function useProfile(user) {
     
     // Alert the Chrome extension of real-time localStorage changes
     window.postMessage({ type: 'APPLYBUDDY_LOCAL_UPDATE' }, '*');
+    
+    if (user) {
+      syncToBackend(sanitized);
+    }
+    
     showSuccessToast();
     setHasUnsavedChanges(false);
-  }, [storageKey, showSuccessToast]);
+  }, [storageKey, showSuccessToast, user, syncToBackend]);
 
   // Explicit save for value edits (manual-save UX)
   const saveChanges = useCallback(() => {
@@ -211,24 +231,48 @@ export function useProfile(user) {
 
     // Alert the Chrome extension of real-time localStorage changes
     window.postMessage({ type: 'APPLYBUDDY_LOCAL_UPDATE' }, '*');
-    showSuccessToast();
-    setHasUnsavedChanges(false);
-  }, [data, hasUnsavedChanges, storageKey, showSuccessToast]);
-
-  // Load profile data from localStorage on mount (relying strictly on local storage)
-  const loadFromBackend = useCallback(async () => {
-    setIsLoaded(true);
-    const localData = loadCachedData();
-    setData(localData);
     
-    // Make sure generic key has the active user's data loaded for the Chrome extension
-    if (user && user.username) {
-      localStorage.setItem('applybuddy_data', JSON.stringify(localData));
+    if (user) {
+      syncToBackend(sanitized);
     }
     
+    showSuccessToast();
+    setHasUnsavedChanges(false);
+  }, [data, hasUnsavedChanges, storageKey, showSuccessToast, user, syncToBackend]);
+
+  // Load profile data from backend or fallback to localStorage
+  const loadFromBackend = useCallback(async () => {
+    setIsLoaded(false);
+    let loadedData = null;
+    
+    if (user) {
+      try {
+        const response = await apiFetch('/api/profile');
+        if (response.ok) {
+          const dbData = await response.json();
+          if (Array.isArray(dbData) && dbData.length > 0) {
+            loadedData = dbData;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load profile from backend:', err);
+      }
+    }
+    
+    if (!loadedData) {
+      loadedData = loadCachedData();
+    }
+    
+    const sanitized = sanitizeProfileData(loadedData);
+    setData(sanitized);
+    
+    // Make sure local storage is in sync
+    localStorage.setItem(storageKey, JSON.stringify(sanitized));
+    localStorage.setItem('applybuddy_data', JSON.stringify(sanitized));
+    
     setHasUnsavedChanges(false);
     setIsLoaded(true);
-  }, [loadCachedData, user]);
+  }, [loadCachedData, user, storageKey]);
 
   useEffect(() => {
     loadFromBackend();

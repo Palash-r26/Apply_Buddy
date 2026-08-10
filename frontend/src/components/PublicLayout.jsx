@@ -1,10 +1,9 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function PublicLayout() {
   const location = useLocation();
-  const isDevPage = location.pathname === '/developers';
-  const isLandingPage = location.pathname === '/';
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.className = 'theme-void';
@@ -13,6 +12,12 @@ export default function PublicLayout() {
       document.documentElement.className = savedTheme;
     };
   }, []);
+
+  // Close mobile menu on navigate
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
   return (
     <div className="public-layout">
       {/* Navbar */}
@@ -23,7 +28,18 @@ export default function PublicLayout() {
             <span>ApplyBuddy</span>
           </Link>
           
-          <div className="nav-links">
+          {/* Hamburger button */}
+          <button 
+            className={`public-hamburger ${isMobileMenuOpen ? 'open' : ''}`}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+
+          <div className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/about" className="nav-link">About</Link>
             <Link to="/developers" className="nav-link">Developers</Link>
@@ -38,7 +54,6 @@ export default function PublicLayout() {
       <main className="public-main">
         <Outlet />
       </main>
-
     </div>
   );
 }

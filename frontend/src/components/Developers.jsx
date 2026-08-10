@@ -7,7 +7,7 @@ export default function Developers() {
     <div className="dev-page-container">
 
       <div className="dev-content">
-        <motion.div 
+        <motion.div
           className="dev-hero"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -21,7 +21,7 @@ export default function Developers() {
           </p>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="dev-profile-card"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -52,7 +52,7 @@ export default function Developers() {
         </motion.div>
 
         <div className="dev-grid">
-          <motion.div 
+          <motion.div
             className="dev-grid-card"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -65,7 +65,7 @@ export default function Developers() {
             <div className="card-body">
               <h4 className="school-name">Madhav Institute of Technology & Science</h4>
               <p className="school-location">Gwalior, Madhya Pradesh</p>
-              
+
               <div className="education-row">
                 <span className="label">Degree</span>
                 <span className="value font-medium">B.Tech</span>
@@ -80,12 +80,12 @@ export default function Developers() {
               </div>
               <div className="cgpa-box">
                 <span className="cgpa-label">CGPA</span>
-                <span className="cgpa-value">8.88</span>
+                <span className="cgpa-value">8.92</span>
               </div>
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             className="dev-grid-card"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -122,7 +122,7 @@ export default function Developers() {
           </motion.div>
         </div>
 
-        <motion.div 
+        <motion.div
           className="dev-portfolio-card"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

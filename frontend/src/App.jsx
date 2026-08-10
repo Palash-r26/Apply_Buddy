@@ -66,7 +66,6 @@ function App() {
 
   const handleAuth = (newUser) => {
     setUser(newUser);
-    loadFromBackend();
   };
 
   const handleLogout = async () => {
