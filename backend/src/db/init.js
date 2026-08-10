@@ -3,37 +3,32 @@ import { pool } from './pool.js';
 export async function initDb() {
   const client = await pool.connect();
   try {
-    // Create users table if not exists
+    // Create users table if not exists in MySQL
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(255) UNIQUE NOT NULL,
-        email VARCHAR(255) UNIQUE,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        reset_token VARCHAR(255) DEFAULT NULL,
+        reset_token_expiry TIMESTAMP NULL DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
-    // Add email and reset token columns if they don't exist (for existing databases)
-    await client.query(`
-      ALTER TABLE users 
-      ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE,
-      ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255),
-      ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP WITH TIME ZONE;
-    `);
-
-    // Create profiles table if not exists, containing dynamic JSONB array data
+    // Create profiles table if not exists in MySQL
     await client.query(`
       CREATE TABLE IF NOT EXISTS profiles (
-        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-        data JSONB NOT NULL DEFAULT '[]'::jsonb,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        user_id INT PRIMARY KEY,
+        data JSON NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
     `);
 
-    console.log('PostgreSQL Database tables initialized successfully.');
+    console.log('MySQL Database tables initialized successfully.');
   } catch (err) {
-    console.error('Error initializing PostgreSQL tables:', err);
+    console.error('Error initializing MySQL tables:', err);
     throw err;
   } finally {
     client.release();
